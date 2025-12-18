@@ -1,4 +1,0 @@
-repository "Diss_demo_test/Diss_demo_test@5773940094183@cloud"
-  path "/"
-    br "/main"
-    co "/main"
