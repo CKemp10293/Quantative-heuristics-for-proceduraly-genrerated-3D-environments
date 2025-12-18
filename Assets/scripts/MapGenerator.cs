@@ -20,7 +20,7 @@ public class MapGenerator : MonoBehaviour
     public float meshHeightMultiplier;
     public AnimationCurve meshHeightCurve;
 
-    public TypeOfTerrain[] biomeRegions;
+    public BiomePreset biomePreset;
 
     public void GenerateMap()
     {
@@ -31,14 +31,18 @@ public class MapGenerator : MonoBehaviour
             for (int x = 0; x < mapChunkSize; x++)
             {
                 float currentHeight = noiseMap[x,y];
-                for (int i = 0; i < biomeRegions.Length; i++)
+                if ( biomePreset != null && biomePreset.regions != null)
                 {
-                    if (currentHeight <= biomeRegions[i].height)
+                    for (int i = 0; i < biomePreset.regions.Length; i++)
+                {
+                    if (currentHeight <= biomePreset.regions[i].height)
                     {
-                        colourMap[y * mapChunkSize + x] = biomeRegions[i].colour;
+                        colourMap[y * mapChunkSize + x] = biomePreset.regions[i].colour;
                         break;
                     }
                 }
+                }
+                
             }
         }
 
@@ -70,10 +74,4 @@ public class MapGenerator : MonoBehaviour
     }
 }
 
-[System.Serializable]
-public struct TypeOfTerrain
-{
-    public string name;
-    public float height;
-    public Color colour;
-}
+
