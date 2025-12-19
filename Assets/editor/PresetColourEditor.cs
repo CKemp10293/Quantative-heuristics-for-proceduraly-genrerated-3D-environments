@@ -1,7 +1,7 @@
 using UnityEditor;
 using UnityEngine;
-[CustomEditor (typeof (NoisePreset))]
-public class PresetNoiseEditor : Editor
+[CustomEditor (typeof (BiomePreset))]
+public class PresetColourEditor : Editor
 {
     public override void OnInspectorGUI()
     {
