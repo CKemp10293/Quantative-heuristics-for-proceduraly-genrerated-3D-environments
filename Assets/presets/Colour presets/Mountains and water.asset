@@ -26,7 +26,7 @@ MonoBehaviour:
     height: 0.55
     colour: {r: 0.34901962, g: 0.59607846, b: 0.09411765, a: 0}
   - name: Forest
-    height: 0.7
+    height: 0.6
     colour: {r: 0.20784314, g: 0.34509805, b: 0.09019608, a: 0}
   - name: Rock
     height: 0.9

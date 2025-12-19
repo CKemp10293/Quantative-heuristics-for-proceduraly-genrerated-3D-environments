@@ -13,18 +13,22 @@ public class MapGenerator : MonoBehaviour
     public float noiseScale;
     public bool autoUpdate;
     public int octaves;
-    [Range(0, 1)]
+    [HideInInspector]
     public float persistance;
+    [HideInInspector]
     public float lacunarity;
     public int seed;
+    [HideInInspector]
     public float meshHeightMultiplier;
+    [HideInInspector]
     public AnimationCurve meshHeightCurve;
 
     public BiomePreset biomePreset;
+    public NoisePreset noisePreset;
 
     public void GenerateMap()
     {
-        float[,] noiseMap = Noise.GenerateNoiseMap(mapChunkSize, mapChunkSize, noiseScale, octaves, persistance, lacunarity, seed);
+        float[,] noiseMap = Noise.GenerateNoiseMap(mapChunkSize, mapChunkSize, noiseScale, octaves, noisePreset.settings[0].persistance, noisePreset.settings[0].lacunarity, seed);
         Color[] colourMap = new Color[mapChunkSize*mapChunkSize];
         for (int y = 0; y < mapChunkSize; y++)
         {
@@ -55,22 +59,10 @@ public class MapGenerator : MonoBehaviour
             display.DrawTexture(TextureGenerator.TextureFromColourMap(colourMap,mapChunkSize,mapChunkSize));
         } else if (drawMode == DrawMode.MESH)
         {
-            display.DrawMesh(MeshGenerator.GenerateTerrainMesh(noiseMap,meshHeightMultiplier,meshHeightCurve,levelOfDetail),TextureGenerator.TextureFromColourMap(colourMap,mapChunkSize,mapChunkSize));
+            display.DrawMesh(MeshGenerator.GenerateTerrainMesh(noiseMap,noisePreset.settings[0].meshHeightMultiplier,noisePreset.settings[0].meshHeightCurve,levelOfDetail),TextureGenerator.TextureFromColourMap(colourMap,mapChunkSize,mapChunkSize));
         }
 
         
-    }
-
-    void OnValidate()
-    {
-        if (lacunarity < 1)
-        {
-            lacunarity = 1;
-        }
-        if (octaves < 0)
-        {
-            octaves = 0;
-        }
     }
 }
 
