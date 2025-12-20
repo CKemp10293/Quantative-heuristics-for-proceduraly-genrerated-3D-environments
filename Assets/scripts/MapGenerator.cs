@@ -26,6 +26,8 @@ public class MapGenerator : MonoBehaviour
     public BiomePreset biomePreset;
     public NoisePreset noisePreset;
 
+    // going to add tree functionality next!!!!
+
     public void GenerateMap()
     {
         float[,] noiseMap = Noise.GenerateNoiseMap(mapChunkSize, mapChunkSize, noiseScale, octaves, noisePreset.settings[0].persistance, noisePreset.settings[0].lacunarity, seed);
