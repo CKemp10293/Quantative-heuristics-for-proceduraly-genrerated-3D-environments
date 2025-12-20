@@ -1,16 +1,12 @@
 using UnityEngine;
 
-public class TreePreset : MonoBehaviour
+[CreateAssetMenu (fileName = "New tree preset", menuName = "treeSettings")]
+public class TreePreset : ScriptableObject
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        
-    }
+    public GameObject treePrefab;
+    [Range(0,1)] public float density;
+    [Range (0.1f,5f)] public float minScale;
+    [Range (0.1f,5f)] public float maxScale;
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+    public int spawnOnBiomeIndex; 
 }
