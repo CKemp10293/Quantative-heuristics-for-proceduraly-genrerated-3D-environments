@@ -45,16 +45,8 @@ public class MapGenerator : MonoBehaviour
         // Getting the tree material/mesh from preset
         Mesh treeMesh = treePreset.treePrefab.GetComponent<MeshFilter>().sharedMesh;
 
-        Material treeMaterial;
-        if (treePreset.materialOverride != null)
-        {
-            treeMaterial = treePreset.materialOverride;
-        }
-        else
-        {
-            treeMaterial = treePreset.treePrefab.GetComponent<MeshRenderer>().sharedMaterial;
-        }
-
+        Material treeMaterial = treePreset.treePrefab.GetComponent<MeshRenderer>().sharedMaterial;
+        
         for (int y = 0; y < mapChunkSize; y++)
         {
             for (int x = 0; x < mapChunkSize; x++)
@@ -83,7 +75,7 @@ public class MapGenerator : MonoBehaviour
                     
                         float posY = meshHeightCurve.Evaluate(currentHeight) * meshHeightMultiplier;
 
-                    // 3. Create Vector relative to the Map Generator
+                    // Create Vector relative to the Map Generator
                         Vector3 localPosition = new Vector3(posX * 10, posY * 10, posZ * 10);
 
                         Vector3 worldPos = transform.TransformPoint(localPosition);
@@ -113,9 +105,9 @@ public class MapGenerator : MonoBehaviour
         }
         TreeGenerator foliageRenderer = GetComponent<TreeGenerator>();
         if (foliageRenderer == null) foliageRenderer = gameObject.AddComponent<TreeGenerator>();
-    
-         // Pass the custom Material Override
-        Material matToUse = (treePreset.materialOverride != null) ? treePreset.materialOverride : treeMaterial;
+
+        // Pass the custom Material Override
+        _ = (treePreset.materialOverride != null) ? treePreset.materialOverride : treeMaterial;
         foliageRenderer.Initialise(treeMatrcies, treePreset.treePrefab);
 
         

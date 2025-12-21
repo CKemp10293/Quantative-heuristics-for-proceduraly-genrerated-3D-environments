@@ -7,18 +7,16 @@ using UnityEngine.Rendering;
 [ExecuteInEditMode]
 public class TreeGenerator : MonoBehaviour
 {
-    [SerializeField] private Mesh treeMesh;
-    [SerializeField] private List<Material> treeMaterials = new List<Material>();
-    [SerializeField] private List<Matrix4x4> allTransforms = new List<Matrix4x4>();
+    [HideInInspector][SerializeField] private Mesh treeMesh;
+    [HideInInspector][SerializeField] private List<Material> treeMaterials = new List<Material>();
+    [HideInInspector][SerializeField] private List<Matrix4x4> allTransforms = new List<Matrix4x4>();
 
     private List<List<Matrix4x4>> batches = new List<List<Matrix4x4>>();
-    private Bounds infiniteBounds; // NEW: Solves the "disappearing" issue
-
     public void Initialise(List<Matrix4x4> transforms, GameObject prefab)
     {
         this.allTransforms = new List<Matrix4x4>(transforms);
         
-        // 1. FIX HIERARCHY: Search inside children for the renderer
+        // Search inside children for the renderer
         // Synty assets often put the mesh on a child object named "Mesh" or "LOD0"
         MeshRenderer mr = prefab.GetComponentInChildren<MeshRenderer>();
         MeshFilter mf = prefab.GetComponentInChildren<MeshFilter>();
