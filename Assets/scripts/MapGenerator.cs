@@ -39,9 +39,21 @@ public class MapGenerator : MonoBehaviour
         System.Random TREERNG = new System.Random(seed);
         List<Matrix4x4> treeMatrcies = new List<Matrix4x4>();
 
+        float topLeftX = (mapChunkSize - 1) / -2f;
+        float topLeftZ = (mapChunkSize - 1) / 2f;
+
         // Getting the tree material/mesh from preset
         Mesh treeMesh = treePreset.treePrefab.GetComponent<MeshFilter>().sharedMesh;
-        Material treeMaterial = treePreset.treePrefab.GetComponent<MeshRenderer>().sharedMaterial;
+
+        Material treeMaterial;
+        if (treePreset.materialOverride != null)
+        {
+            treeMaterial = treePreset.materialOverride;
+        }
+        else
+        {
+            treeMaterial = treePreset.treePrefab.GetComponent<MeshRenderer>().sharedMaterial;
+        }
 
         for (int y = 0; y < mapChunkSize; y++)
         {
@@ -66,30 +78,27 @@ public class MapGenerator : MonoBehaviour
                 {
                     if(TREERNG.NextDouble() < treePreset.density)
                     {
-                        // x/z come from loop
-                        float treePosX  = x - mapChunkSize / 2f + (float)TREERNG.NextDouble() - 0.5f;
-                        float treePosZ = -(y - mapChunkSize / 2f + (float)TREERNG.NextDouble() - 0.5f);
-                        float treePosY = Mathf.InverseLerp(0,1,noiseMap[x,y]); // normalise
+                        float posX = topLeftX + x;
+                        float posZ = topLeftZ - y;
+                    
+                        float posY = meshHeightCurve.Evaluate(currentHeight) * meshHeightMultiplier;
 
-                        float treeHeightMultiplier = noisePreset.settings[0].meshHeightMultiplier;
-                        AnimationCurve treeHeightCurve  = noisePreset.settings[0].meshHeightCurve;
-                        treePosY = treeHeightCurve.Evaluate(currentHeight) * treeHeightMultiplier;
-                        Vector3 treePosition = new Vector3(treePosX,treePosY,treePosZ);
+                    // 3. Create Vector relative to the Map Generator
+                        Vector3 localPosition = new Vector3(posX * 10, posY * 10, posZ * 10);
 
-                        // random rotation and scale
-                        Quaternion rotation = Quaternion.Euler(0,(float)TREERNG.NextDouble() * 360f,0);
-                        float treeScaleValue = Mathf.Lerp(treePreset.minScale,treePreset.maxScale,(float)TREERNG.NextDouble());
-                        Vector3 treeScale = Vector3.one * treeScaleValue;
+                        Vector3 worldPos = transform.TransformPoint(localPosition);
+                        worldPos.y += treePreset.heightOffset;
+                    
+                        Quaternion rotation = Quaternion.Euler(0, (float)TREERNG.NextDouble() * 360f, 0);
+                        float scaleVal = Mathf.Lerp(treePreset.minScale, treePreset.maxScale, (float)TREERNG.NextDouble());
+                        Vector3 scale = Vector3.one * scaleVal;
 
-                        // add to list 
-                        treeMatrcies.Add(Matrix4x4.TRS(treePosition,rotation,treeScale));
+                        treeMatrcies.Add(Matrix4x4.TRS(worldPos, rotation, scale));
                     }
                 }
                 
             }
         }
-
-        
 
         MapDisplay display = FindFirstObjectByType<MapDisplay>();
         if (drawMode == DrawMode.NOISEMAP)
@@ -102,10 +111,12 @@ public class MapGenerator : MonoBehaviour
         {
             display.DrawMesh(MeshGenerator.GenerateTerrainMesh(noiseMap,noisePreset.settings[0].meshHeightMultiplier,noisePreset.settings[0].meshHeightCurve,levelOfDetail),TextureGenerator.TextureFromColourMap(colourMap,mapChunkSize,mapChunkSize));
         }
-        TreeGenerator treeGenerator = GetComponent<TreeGenerator>();
-        if (treeGenerator == null) treeGenerator = gameObject.AddComponent<TreeGenerator>();
-
-        treeGenerator.Initialise(treeMatrcies,treeMesh,treeMaterial);
+        TreeGenerator foliageRenderer = GetComponent<TreeGenerator>();
+        if (foliageRenderer == null) foliageRenderer = gameObject.AddComponent<TreeGenerator>();
+    
+         // Pass the custom Material Override
+        Material matToUse = (treePreset.materialOverride != null) ? treePreset.materialOverride : treeMaterial;
+        foliageRenderer.Initialise(treeMatrcies, treePreset.treePrefab);
 
         
     }
