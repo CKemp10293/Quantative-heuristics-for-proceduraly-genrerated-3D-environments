@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using UnityEngine.Rendering;
+using System.Collections.Generic;
 
 public class MapGenerator : MonoBehaviour
 {
@@ -27,16 +28,27 @@ public class MapGenerator : MonoBehaviour
     public NoisePreset noisePreset;
 
     // going to add tree functionality next!!!!
+    public TreePreset treePreset;
 
+    public bool useGPUInstancing = true;
     public void GenerateMap()
     {
         float[,] noiseMap = Noise.GenerateNoiseMap(mapChunkSize, mapChunkSize, noiseScale, octaves, noisePreset.settings[0].persistance, noisePreset.settings[0].lacunarity, seed);
         Color[] colourMap = new Color[mapChunkSize*mapChunkSize];
+        // So the trees are the same if the seed is the same
+        System.Random TREERNG = new System.Random(seed);
+        List<Matrix4x4> treeMatrcies = new List<Matrix4x4>();
+
+        // Getting the tree material/mesh from preset
+        Mesh treeMesh = treePreset.treePrefab.GetComponent<MeshFilter>().sharedMesh;
+        Material treeMaterial = treePreset.treePrefab.GetComponent<MeshRenderer>().sharedMaterial;
+
         for (int y = 0; y < mapChunkSize; y++)
         {
             for (int x = 0; x < mapChunkSize; x++)
             {
                 float currentHeight = noiseMap[x,y];
+                int currentBiomeIndex = -1; // Track which biome we are in
                 if ( biomePreset != null && biomePreset.regions != null)
                 {
                     for (int i = 0; i < biomePreset.regions.Length; i++)
@@ -44,13 +56,40 @@ public class MapGenerator : MonoBehaviour
                     if (currentHeight <= biomePreset.regions[i].height)
                     {
                         colourMap[y * mapChunkSize + x] = biomePreset.regions[i].colour;
+                        currentBiomeIndex = i; // Save index
                         break;
                     }
                 }
                 }
+                // Adding tree logic
+                if(currentBiomeIndex == treePreset.spawnOnBiomeIndex)
+                {
+                    if(TREERNG.NextDouble() < treePreset.density)
+                    {
+                        // x/z come from loop
+                        float treePosX  = x - mapChunkSize / 2f + (float)TREERNG.NextDouble() - 0.5f;
+                        float treePosZ = -(y - mapChunkSize / 2f + (float)TREERNG.NextDouble() - 0.5f);
+                        float treePosY = Mathf.InverseLerp(0,1,noiseMap[x,y]); // normalise
+
+                        float treeHeightMultiplier = noisePreset.settings[0].meshHeightMultiplier;
+                        AnimationCurve treeHeightCurve  = noisePreset.settings[0].meshHeightCurve;
+                        treePosY = treeHeightCurve.Evaluate(currentHeight) * treeHeightMultiplier;
+                        Vector3 treePosition = new Vector3(treePosX,treePosY,treePosZ);
+
+                        // random rotation and scale
+                        Quaternion rotation = Quaternion.Euler(0,(float)TREERNG.NextDouble() * 360f,0);
+                        float treeScaleValue = Mathf.Lerp(treePreset.minScale,treePreset.maxScale,(float)TREERNG.NextDouble());
+                        Vector3 treeScale = Vector3.one * treeScaleValue;
+
+                        // add to list 
+                        treeMatrcies.Add(Matrix4x4.TRS(treePosition,rotation,treeScale));
+                    }
+                }
                 
             }
         }
+
+        
 
         MapDisplay display = FindFirstObjectByType<MapDisplay>();
         if (drawMode == DrawMode.NOISEMAP)
@@ -63,6 +102,10 @@ public class MapGenerator : MonoBehaviour
         {
             display.DrawMesh(MeshGenerator.GenerateTerrainMesh(noiseMap,noisePreset.settings[0].meshHeightMultiplier,noisePreset.settings[0].meshHeightCurve,levelOfDetail),TextureGenerator.TextureFromColourMap(colourMap,mapChunkSize,mapChunkSize));
         }
+        TreeGenerator treeGenerator = GetComponent<TreeGenerator>();
+        if (treeGenerator == null) treeGenerator = gameObject.AddComponent<TreeGenerator>();
+
+        treeGenerator.Initialise(treeMatrcies,treeMesh,treeMaterial);
 
         
     }
