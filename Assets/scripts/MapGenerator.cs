@@ -14,25 +14,31 @@ public class MapGenerator : MonoBehaviour
     public float noiseScale;
     public bool autoUpdate;
     public int octaves;
-    [HideInInspector]
-    public float persistance;
-    [HideInInspector]
-    public float lacunarity;
+    [HideInInspector] public float persistance;
+    [HideInInspector] public float lacunarity;
     public int seed;
-    [HideInInspector]
-    public float meshHeightMultiplier;
-    [HideInInspector]
-    public AnimationCurve meshHeightCurve;
+    [HideInInspector] public float meshHeightMultiplier;
+    [HideInInspector] public AnimationCurve meshHeightCurve;
 
-    public BiomePreset biomePreset;
-    public NoisePreset noisePreset;
-
-    // going to add tree functionality next!!!!
-    public TreePreset treePreset;
+    [Header("Preset Configuration")]
+    // The list of all possible presets.
+    public List<MapConfig> availablePresets;
+    // The currently selected index 
+    [HideInInspector] public int activePresetIndex = 0;
+    private BiomePreset biomePreset;
+    private NoisePreset noisePreset;
+    private TreePreset treePreset;
 
     public bool useGPUInstancing = true;
     public void GenerateMap()
     {
+        activePresetIndex = Mathf.Clamp(activePresetIndex, 0, availablePresets.Count - 1);
+        // 2. LOAD DATA: Pull the sub-files from the Master Config
+        MapConfig activeConfig = availablePresets[activePresetIndex];
+        noisePreset = activeConfig.noisePreset;
+        biomePreset = activeConfig.biomePreset;
+        treePreset = activeConfig.treePreset;
+
         float[,] noiseMap = Noise.GenerateNoiseMap(mapChunkSize, mapChunkSize, noiseScale, octaves, noisePreset.settings[0].persistance, noisePreset.settings[0].lacunarity, seed);
         Color[] colourMap = new Color[mapChunkSize*mapChunkSize];
         // So the trees are the same if the seed is the same
@@ -111,6 +117,11 @@ public class MapGenerator : MonoBehaviour
         foliageRenderer.Initialise(treeMatrcies, treePreset.treePrefab);
 
         
+    }
+    void OnValidate()
+    {
+        if (lacunarity < 1) lacunarity = 1;
+        if (octaves < 0) octaves = 0;
     }
 }
 
