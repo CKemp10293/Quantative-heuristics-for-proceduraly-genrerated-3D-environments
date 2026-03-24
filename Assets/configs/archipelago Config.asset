@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8396512fe863e4deea1903fa497c6f68, type: 3}
+  m_Name: archipelago Config
+  m_EditorClassIdentifier: Assembly-CSharp::MapConfig
+  configName: archipeligo
+  noisePreset: {fileID: 11400000, guid: 376cadc04b9ce2a5b90416828eae442e, type: 2}
+  biomePreset: {fileID: 11400000, guid: 0691ce020a47e0b4d8514946336a534b, type: 2}
+  treePreset: {fileID: 11400000, guid: c7688f1d523bc8cad9ae4336c2348903, type: 2}

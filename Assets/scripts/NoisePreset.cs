@@ -15,4 +15,9 @@ public struct TypeOfNoise
     public float persistance;
     public float meshHeightMultiplier;
     public AnimationCurve meshHeightCurve;
+    public int seed;
+    public int octaves;
+
+    public Noise.NormalisationMode normalisationMode;
+
 }

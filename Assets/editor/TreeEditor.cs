@@ -8,7 +8,7 @@ public class TreeEditor : Editor
         MapGenerator mapgen = FindFirstObjectByType<MapGenerator>();
         if (DrawDefaultInspector())
         {
-            mapgen.GenerateMap();
+            mapgen.DrawMapInEditor();
         }
 
     }

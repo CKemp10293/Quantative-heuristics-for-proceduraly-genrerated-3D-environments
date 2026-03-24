@@ -2,27 +2,30 @@ using UnityEngine;
 using System.Collections;
 using UnityEngine.Rendering;
 using System.Collections.Generic;
-
+using System;
+using System.Threading;
+using System.Runtime.InteropServices;
+using Unity.Mathematics;
+using System.Linq;
+using Unity.VisualScripting;
 public class MapGenerator : MonoBehaviour
 {
     public enum DrawMode {NOISEMAP,COLOURMAP,MESH}
     public DrawMode drawMode;
-    const int mapChunkSize= 241; // unity imposes a max number of vertcies as 255^2, we need out width have have a nice ammount of factors
-                                 // for the chunking to work. 240 has factors: 2,4,6,8,10,12
+    public const int mapChunkSize= 239; // unity imposes a max number of vertcies as 255^2,
+                                        // we need out width have have a nice ammount of factors
+                                        // for the chunking to work. 240 has factors: 2,4,6,8,10,12
+
     [Range(0,6)] // Clamp variable. mulitply by two to get the 12.
-    public int levelOfDetail;
+    public int EditorLevelOfDetail;
     public float noiseScale;
     public bool autoUpdate;
-    public int octaves;
-    [HideInInspector] public float persistance;
-    [HideInInspector] public float lacunarity;
-    public int seed;
-    [HideInInspector] public float meshHeightMultiplier;
-    [HideInInspector] public AnimationCurve meshHeightCurve;
+    public Vector2 offset;
 
     [Header("Preset Configuration")]
     // The list of all possible presets.
     public List<MapConfig> availablePresets;
+    
     // The currently selected index 
     [HideInInspector] public int activePresetIndex = 0;
     private BiomePreset biomePreset;
@@ -30,7 +33,86 @@ public class MapGenerator : MonoBehaviour
     private TreePreset treePreset;
 
     public bool useGPUInstancing = true;
-    public void GenerateMap()
+    // queue for map info (colours and look ect.)
+    Queue<MapThreadInfo<MapData>> mapDataThreadInfoQueue = new Queue<MapThreadInfo<MapData>>();
+    // queue for mesh info (height and curves ect.)
+    Queue<MapThreadInfo<MeshData>> meshDataTheadInfoQueue = new Queue<MapThreadInfo<MeshData>>();
+
+    public void DrawMapInEditor()
+    {
+        MapData mapData = GenerateMap(Vector2.zero);
+        MapDisplay display = FindFirstObjectByType<MapDisplay>();
+        if (drawMode == DrawMode.NOISEMAP)
+        {
+            display.DrawTexture(TextureGenerator.TextureFromHeightMap(mapData.heightMap));
+        } else if (drawMode == DrawMode.COLOURMAP)
+        {
+            display.DrawTexture(TextureGenerator.TextureFromColourMap(mapData.colourMap,mapChunkSize,mapChunkSize));
+        } else if (drawMode == DrawMode.MESH)
+        {
+            display.DrawMesh(MeshGenerator.GenerateTerrainMesh(mapData.heightMap,noisePreset.settings[0].meshHeightMultiplier
+            ,noisePreset.settings[0].meshHeightCurve,EditorLevelOfDetail),TextureGenerator.TextureFromColourMap(mapData.colourMap,mapChunkSize,mapChunkSize));
+        }
+    }
+
+    public void RequestMapData(Vector2 center,Action<MapData> callback)
+    {
+        ThreadStart threadStart = delegate
+        {
+            MapDataThread(center,callback);
+        };
+        new Thread (threadStart).Start();
+    }
+
+    void MapDataThread(Vector2 center,Action<MapData> callback)
+    {
+        MapData mapData = GenerateMap(center);
+        // prevent race conditions by locking queue.
+        lock (mapDataThreadInfoQueue)
+        {
+            mapDataThreadInfoQueue.Enqueue(new MapThreadInfo<MapData>(callback,mapData));
+
+        }
+    }
+
+    public void RequestMeshData(MapData mapData,int LOD,Action<MeshData> callback)
+    {
+        ThreadStart threadStart = delegate
+        {
+            MeshDataThread(mapData,LOD,callback);
+        };
+        new Thread(threadStart).Start();
+    }
+
+    void MeshDataThread(MapData mapData,int LOD, Action<MeshData> callback)
+    {
+        MapConfig config = availablePresets[mapData.presetIndex];
+        NoisePreset noisePreset = config.noisePreset;
+
+        MeshData meshData = MeshGenerator.GenerateTerrainMesh(mapData.heightMap,
+        noisePreset.settings[0].meshHeightMultiplier,
+        noisePreset.settings[0].meshHeightCurve,LOD);
+        lock (meshDataTheadInfoQueue)
+        {
+            meshDataTheadInfoQueue.Enqueue(new MapThreadInfo<MeshData>(callback,meshData));
+        }
+    }
+
+    void Update()
+    {
+        while(mapDataThreadInfoQueue.Count > 0)
+        {
+            MapThreadInfo<MapData> threadInfoMap = mapDataThreadInfoQueue.Dequeue();
+            threadInfoMap.callback(threadInfoMap.parameter);
+        }
+        while(meshDataTheadInfoQueue.Count > 0)
+        {
+            MapThreadInfo<MeshData> threadInfoMesh = meshDataTheadInfoQueue.Dequeue();
+            threadInfoMesh.callback(threadInfoMesh.parameter);
+        }    
+    }
+
+    MapData GenerateMap(Vector2 centre)
     {
         activePresetIndex = Mathf.Clamp(activePresetIndex, 0, availablePresets.Count - 1);
         // 2. LOAD DATA: Pull the sub-files from the Master Config
@@ -39,89 +121,112 @@ public class MapGenerator : MonoBehaviour
         biomePreset = activeConfig.biomePreset;
         treePreset = activeConfig.treePreset;
 
-        float[,] noiseMap = Noise.GenerateNoiseMap(mapChunkSize, mapChunkSize, noiseScale, octaves, noisePreset.settings[0].persistance, noisePreset.settings[0].lacunarity, seed);
+        float[,] noiseMap = Noise.GenerateNoiseMap(mapChunkSize + 2, mapChunkSize + 2, noiseScale, noisePreset.settings[0].octaves, noisePreset.settings[0].persistance,
+         noisePreset.settings[0].lacunarity,noisePreset.settings[0].seed, centre + offset,noisePreset.settings[0].normalisationMode );
+
         Color[] colourMap = new Color[mapChunkSize*mapChunkSize];
+        
+        // Get how many types of prefabs we wish to generate.  0 if none available
+        int prefabTypeCount = (treePreset != null && treePreset.prefabConfigs != null) ? treePreset.prefabConfigs.Length : 0;
+        List<Matrix4x4>[] prefabMatrices = new List<Matrix4x4>[prefabTypeCount];
+        for (int i = 0; i < prefabTypeCount; i++)
+        {
+            prefabMatrices[i] = new List<Matrix4x4>();
+        }
+        
         // So the trees are the same if the seed is the same
-        System.Random TREERNG = new System.Random(seed);
-        List<Matrix4x4> treeMatrcies = new List<Matrix4x4>();
+        int chunkSeed = centre.GetHashCode() + noisePreset.settings[0].seed;
+        System.Random treeRNG = new System.Random(chunkSeed);
+
+        AnimationCurve heightCurve = new AnimationCurve(noisePreset.settings[0].meshHeightCurve.keys);
+        float heightMultiplier = noisePreset.settings[0].meshHeightMultiplier;
 
         float topLeftX = (mapChunkSize - 1) / -2f;
         float topLeftZ = (mapChunkSize - 1) / 2f;
-
-        // Getting the tree material/mesh from preset
-        Mesh treeMesh = treePreset.treePrefab.GetComponent<MeshFilter>().sharedMesh;
-
-        Material treeMaterial = treePreset.treePrefab.GetComponent<MeshRenderer>().sharedMaterial;
         
         for (int y = 0; y < mapChunkSize; y++)
         {
             for (int x = 0; x < mapChunkSize; x++)
             {
-                float currentHeight = noiseMap[x,y];
+                float currentHeight = noiseMap[x + 1,y + 1];
+                
                 int currentBiomeIndex = -1; // Track which biome we are in
                 if ( biomePreset != null && biomePreset.regions != null)
                 {
                     for (int i = 0; i < biomePreset.regions.Length; i++)
                 {
-                    if (currentHeight <= biomePreset.regions[i].height)
+                    if (currentHeight >= biomePreset.regions[i].height)
                     {
                         colourMap[y * mapChunkSize + x] = biomePreset.regions[i].colour;
                         currentBiomeIndex = i; // Save index
+                    }
+                    else
+                    {
                         break;
                     }
                 }
                 }
                 // Adding tree logic
-                if(currentBiomeIndex == treePreset.spawnOnBiomeIndex)
+                if(treePreset != null)
                 {
-                    if(TREERNG.NextDouble() < treePreset.density)
+                    for (int i = 0; i < prefabTypeCount; i++)
                     {
-                        float posX = topLeftX + x;
-                        float posZ = topLeftZ - y;
-                    
-                        float posY = meshHeightCurve.Evaluate(currentHeight) * meshHeightMultiplier;
+                        TreeConfig config = treePreset.prefabConfigs[i];
 
-                    // Create Vector relative to the Map Generator
-                        Vector3 localPosition = new Vector3(posX * 10, posY * 10, posZ * 10);
+                        if(config == null || config.prefab == null) continue;
+                        if(currentBiomeIndex != config.spawnOnBiomeIndex) continue;
 
-                        Vector3 worldPos = transform.TransformPoint(localPosition);
-                        worldPos.y += treePreset.heightOffset;
-                    
-                        Quaternion rotation = Quaternion.Euler(0, (float)TREERNG.NextDouble() * 360f, 0);
-                        float scaleVal = Mathf.Lerp(treePreset.minScale, treePreset.maxScale, (float)TREERNG.NextDouble());
-                        Vector3 scale = Vector3.one * scaleVal;
+                        if(treeRNG.NextDouble() < config.density)
+                        {
+                            float localx = topLeftX + x;
+                            float localz = topLeftZ - y;
+                            float localy = heightCurve.Evaluate(currentHeight) * heightMultiplier;
 
-                        treeMatrcies.Add(Matrix4x4.TRS(worldPos, rotation, scale));
+                            Vector3 position = new Vector3(centre.x + localx,localy + config.heightOffset,centre.y + localz);
+                            quaternion rotation = quaternion.Euler(0,(float)treeRNG.NextDouble() * 360f,0);
+                            float scaleValue = Mathf.Lerp(config.minScale,config.maxScale,(float)treeRNG.NextDouble());
+                            Vector3 scale = Vector3.one * scaleValue;
+
+                            if(prefabMatrices[i] == null ) prefabMatrices[i] = new List<Matrix4x4>();
+
+                            prefabMatrices[i].Add(Matrix4x4.TRS(position,rotation,scale));
+                            break;
+                        }
                     }
                 }
                 
             }
         }
-
-        MapDisplay display = FindFirstObjectByType<MapDisplay>();
-        if (drawMode == DrawMode.NOISEMAP)
-        {
-            display.DrawTexture(TextureGenerator.TextureFromHeightMap(noiseMap));
-        } else if (drawMode == DrawMode.COLOURMAP)
-        {
-            display.DrawTexture(TextureGenerator.TextureFromColourMap(colourMap,mapChunkSize,mapChunkSize));
-        } else if (drawMode == DrawMode.MESH)
-        {
-            display.DrawMesh(MeshGenerator.GenerateTerrainMesh(noiseMap,noisePreset.settings[0].meshHeightMultiplier,noisePreset.settings[0].meshHeightCurve,levelOfDetail),TextureGenerator.TextureFromColourMap(colourMap,mapChunkSize,mapChunkSize));
-        }
-        TreeGenerator foliageRenderer = GetComponent<TreeGenerator>();
-        if (foliageRenderer == null) foliageRenderer = gameObject.AddComponent<TreeGenerator>();
-
-        // Pass the custom Material Override
-        _ = (treePreset.materialOverride != null) ? treePreset.materialOverride : treeMaterial;
-        foliageRenderer.Initialise(treeMatrcies, treePreset.treePrefab);
-
-        
+        return new MapData(noiseMap,colourMap,prefabMatrices,activePresetIndex);
     }
-    void OnValidate()
+
+    // Generic struct to hold map and mesh information for threading.
+    struct MapThreadInfo<T>
     {
-        if (lacunarity < 1) lacunarity = 1;
-        if (octaves < 0) octaves = 0;
+        public readonly Action<T> callback;
+        public readonly T parameter;
+
+        public MapThreadInfo(Action<T> callback, T parameter)
+        {
+            this.callback = callback;
+            this.parameter = parameter;
+        }
+    }
+}
+
+public struct MapData
+{
+    public readonly float[,] heightMap;
+    public readonly Color[] colourMap;
+    public readonly List<Matrix4x4>[] treeMatrices; // New: Holds tree data
+    public readonly int presetIndex;
+
+    public MapData(float[,] heightMap,Color[] colourMap,List<Matrix4x4>[] treeMatrices,int presetIndex)
+    {
+        this.heightMap = heightMap;
+        this.colourMap = colourMap;
+        this.treeMatrices = treeMatrices;
+        this.presetIndex = presetIndex;
     }
 }
 

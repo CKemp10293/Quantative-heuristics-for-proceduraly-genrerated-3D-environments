@@ -14,11 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BiomePreset
   regions:
   - name: Desert One
-    height: 0.5
+    height: 0.2
     colour: {r: 1, g: 0.8431373, b: 0, a: 1}
   - name: Desert Two
-    height: 0.7
+    height: 0.6
     colour: {r: 0.854902, g: 0.6470588, b: 0.1254902, a: 1}
   - name: Desert Three
-    height: 1
+    height: 0.775
     colour: {r: 0.7215686, g: 0.5254902, b: 0.04313726, a: 1}

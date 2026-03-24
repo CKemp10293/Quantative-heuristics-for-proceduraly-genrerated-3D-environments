@@ -9,7 +9,7 @@ public class TreeGenerator : MonoBehaviour
 {
     [HideInInspector][SerializeField] private Mesh treeMesh;
     [HideInInspector][SerializeField] private List<Material> treeMaterials = new List<Material>();
-    [HideInInspector][SerializeField] private List<Matrix4x4> allTransforms = new List<Matrix4x4>();
+    [SerializeField] private List<Matrix4x4> allTransforms = new List<Matrix4x4>();
 
     private List<List<Matrix4x4>> batches = new List<List<Matrix4x4>>();
     public void Initialise(List<Matrix4x4> transforms, GameObject prefab)

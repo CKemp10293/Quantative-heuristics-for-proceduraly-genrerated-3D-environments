@@ -1,5 +1,7 @@
 using UnityEngine;
+using System;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 public static class Perlin
 {
     private static readonly int[] Permutation;
@@ -8,9 +10,10 @@ public static class Perlin
         Permutation = MakePermutation();
     }
 
-    private static void Shuffle(int[] arrayToShuffle){
+
+    private static void Shuffle(int[] arrayToShuffle,System.Random random){
         for(int e = arrayToShuffle.Length -1; e > 0;e--){
-            int index = Random.Range(0,e);
+            int index = random.Next(0,e);
             (arrayToShuffle[index], arrayToShuffle[e]) = (arrayToShuffle[e], arrayToShuffle[index]);
         }
     }
@@ -22,7 +25,8 @@ public static class Perlin
             permutation[i] = i;
         }
 
-        Shuffle(permutation);
+        System.Random random = new System.Random();
+        Shuffle(permutation,random);
 
         // Duplicate array to avoid overflow issues
 

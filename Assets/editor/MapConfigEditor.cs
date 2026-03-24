@@ -9,6 +9,7 @@ public class MapConfigEditor : Editor
     public override void OnInspectorGUI(){
         
         MapGenerator mapGen = (MapGenerator)target;
+        DrawDefaultInspector();
 
         EditorGUI.BeginChangeCheck();
 
@@ -32,14 +33,14 @@ public class MapConfigEditor : Editor
         {
             if (mapGen.autoUpdate)
             {
-                mapGen.GenerateMap();
+                mapGen.DrawMapInEditor();
             }
         }
 
         // Generate Button
         if (GUILayout.Button("Generate"))
         {
-            mapGen.GenerateMap();
+            mapGen.DrawMapInEditor();
         }
 
     }
