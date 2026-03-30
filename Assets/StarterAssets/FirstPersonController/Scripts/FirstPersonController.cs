@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.Rendering;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif
@@ -51,6 +52,24 @@ namespace StarterAssets
 		[Tooltip("How far in degrees can you move the camera down")]
 		public float BottomClamp = -90.0f;
 
+		// swimming
+		[Header("Ocean Settings")]
+    	public float waterLevel = 12f; // EXACTLY matches your HDRP Ocean Y-position
+    	public float waterDrag = 2f;   // Slows the player down in water
+    	public float buoyancy = 1f;    // Pushes the player up to the surface
+		public float swimSpeed = 3f;
+
+		[Header("Swimming Effects")]
+        public float swimBobSpeed = 2f;
+        public float swimBobAmount = 0.08f;
+        public Volume underwaterVolume; // Link to our HDRP FX
+        private float defaultCameraY;
+
+    	private CharacterController controller;
+    	private Vector3 velocity;
+    	private bool isGrounded;
+    	private bool isSwimming;
+
 		// cinemachine
 		private float _cinemachineTargetPitch;
 
@@ -97,6 +116,7 @@ namespace StarterAssets
 
 		private void Start()
 		{
+			defaultCameraY = CinemachineCameraTarget.transform.localPosition.y;
 			_controller = GetComponent<CharacterController>();
 			_input = GetComponent<StarterAssetsInputs>();
 #if ENABLE_INPUT_SYSTEM
@@ -112,14 +132,24 @@ namespace StarterAssets
 
 		private void Update()
 		{
-			JumpAndGravity();
-			GroundedCheck();
-			Move();
+			isSwimming = transform.position.y < (waterLevel - 0.2f);
+
+			if (isSwimming)
+			{
+				HandleSwimming();
+			}
+			else
+			{
+				JumpAndGravity();
+				GroundedCheck();
+				Move();
+			};
 		}
 
 		private void LateUpdate()
 		{
 			CameraRotation();
+			SwimmingVisuals();
 		}
 
 		private void GroundedCheck()
@@ -245,6 +275,64 @@ namespace StarterAssets
 				_verticalVelocity += Gravity * Time.deltaTime;
 			}
 		}
+		void HandleSwimming()
+    	{
+        	_verticalVelocity = Mathf.Lerp(_verticalVelocity, 0f, waterDrag * Time.deltaTime);
+
+			// 2. 3D Swimming Movement using the New Input System
+			Vector3 inputDirection = new Vector3(_input.move.x, 0.0f, _input.move.y).normalized;
+			Vector3 move = transform.right * inputDirection.x + transform.forward * inputDirection.z;
+
+			// Allow the player to swim up (Jump) or dive down (Sprint)
+			if (_input.jump) move.y = 1f;
+			if (_input.sprint) move.y = -1f; // Re-using sprint button to dive!
+
+			_controller.Move(move * swimSpeed * Time.deltaTime);
+
+			// 3. Gentle Buoyancy (Float to the top if not pressing anything)
+			if (transform.position.y < waterLevel - 1f)
+			{
+				_verticalVelocity += buoyancy * Time.deltaTime;
+			}
+
+			// Apply the vertical math
+			_controller.Move(new Vector3(0.0f, _verticalVelocity, 0.0f) * Time.deltaTime);
+    	}
+		private void SwimmingVisuals()
+        {
+            // 1. Handle the Camera Bobble
+            Vector3 targetLocalPos = CinemachineCameraTarget.transform.localPosition;
+            if (isSwimming)
+            {
+                // Create a smooth up-and-down wave based on time
+                float bobOffset = Mathf.Sin(Time.time * swimBobSpeed) * swimBobAmount;
+                targetLocalPos.y = Mathf.Lerp(targetLocalPos.y, defaultCameraY + bobOffset, Time.deltaTime * 3f);
+            }
+            else
+            {
+                // Snap back to the normal neck height when walking
+                targetLocalPos.y = Mathf.Lerp(targetLocalPos.y, defaultCameraY, Time.deltaTime * 5f);
+            }
+            CinemachineCameraTarget.transform.localPosition = targetLocalPos;
+
+            // 2. Handle the Post-Processing Fade
+            if (underwaterVolume != null)
+            {
+                // Fact: We need the exact world height of the camera "eyes", not the player's feet!
+                float cameraWorldY = CinemachineCameraTarget.transform.position.y;
+                
+                // Calculate exactly how deep the camera is. 
+                // If depth is positive, we are underwater. If negative, we are in the air.
+                float depth = waterLevel - cameraWorldY;
+                
+                // We use a tiny 0.15 meter transition zone. 
+                // This means the exact millisecond the water line crosses the camera lens, it snaps to 1 (Blurry) or 0 (Clear).
+                float targetWeight = Mathf.Clamp01(depth / 0.15f); 
+                
+                // Use a very fast speed (15f) so the water visually "clears" off the screen instantly when you surface
+                underwaterVolume.weight = Mathf.Lerp(underwaterVolume.weight, targetWeight, Time.deltaTime * 15f);
+            }
+        }
 
 		private static float ClampAngle(float lfAngle, float lfMin, float lfMax)
 		{

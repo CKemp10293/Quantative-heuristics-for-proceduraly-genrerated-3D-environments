@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: archipelago Noise
   m_EditorClassIdentifier: Assembly-CSharp::NoisePreset
   settings:
-  - lacunarity: 4.5
-    persistance: 0.2
-    meshHeightMultiplier: 10
+  - lacunarity: 2.52
+    persistance: 0.271
+    meshHeightMultiplier: 50
     meshHeightCurve:
       serializedVersion: 2
       m_Curve:

@@ -48,10 +48,27 @@ public static class MeshGenerator
             {
                 int vertexIndex = vertexIndiciesMap[x,y];
                 // for centering purposes
-                Vector2 percent = new Vector2((x - simplificationIncrement) / ((float)meshSize ),(y - simplificationIncrement) / (float)meshSize);
-                float height = heightCurve.Evaluate(heightMap[x,y]) * heightMultiplier;
-                Vector3 vertexPostion = new Vector3 (topLeftX + percent.x * meshSizeUnsimplified ,height ,topLeftZ - percent.y * meshSizeUnsimplified);
+                // 1. Calculate the physical percent first
+                Vector2 percent = new Vector2((x - simplificationIncrement) / (float)(meshSize - 1), (y - simplificationIncrement) / (float)(meshSize - 1));
+                
+                // 2. Map the percent to the exact fractional indices of the heightmap array
+                float exactX = Mathf.Clamp(Mathf.Lerp(1, borderedSize - 2, percent.x), 0, borderedSize - 1);
+                float exactY = Mathf.Clamp(Mathf.Lerp(1, borderedSize - 2, percent.y), 0, borderedSize - 1);
 
+                // 3. Bilinear Interpolation (Smoothly mix the 4 closest heightmap pixels so skipped LOD vertices are perfectly accurate)
+                int x1 = Mathf.FloorToInt(exactX);
+                int y1 = Mathf.FloorToInt(exactY);
+                int x2 = Mathf.Min(x1 + 1, borderedSize - 1);
+                int y2 = Mathf.Min(y1 + 1, borderedSize - 1);
+
+                float h1 = Mathf.Lerp(heightMap[x1, y1], heightMap[x2, y1], exactX - x1);
+                float h2 = Mathf.Lerp(heightMap[x1, y2], heightMap[x2, y2], exactX - x1);
+                float preciseHeight = Mathf.Lerp(h1, h2, exactY - y1);
+
+                // 4. Apply the perfectly smoothed height
+                float height = heightCurve.Evaluate(preciseHeight) * heightMultiplier;
+                Vector3 vertexPostion = new Vector3 (topLeftX + percent.x * (meshSizeUnsimplified - 1), height, topLeftZ - percent.y * (meshSizeUnsimplified - 1));
+                
                 meshData.addVertex(vertexPostion,percent,vertexIndex);
 
                 // making sure we ignore everything on the very rightmost edge and the very bottom of heightmap
@@ -181,7 +198,7 @@ public class MeshData
 
         Vector3 sideAB = pointB - pointA;
         Vector3 sideAC = pointC - pointA;
-        return Vector3.Cross(sideAB,sideAC).normalized;
+        return Vector3.Cross(sideAB,sideAC);
     }
 
     public void bakeNormals()
@@ -196,6 +213,9 @@ public class MeshData
         mesh.triangles = triangles;
         mesh.uv = uvs;
         mesh.normals = bakedNormals;
+
+        mesh.RecalculateBounds();
+        mesh.RecalculateTangents();
         return mesh;
     }
 }

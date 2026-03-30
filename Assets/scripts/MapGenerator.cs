@@ -31,6 +31,8 @@ public class MapGenerator : MonoBehaviour
     private BiomePreset biomePreset;
     private NoisePreset noisePreset;
     private TreePreset treePreset;
+    public TextureData textureData;
+    public Material terrainMaterial;
 
     public bool useGPUInstancing = true;
     // queue for map info (colours and look ect.)
@@ -110,6 +112,26 @@ public class MapGenerator : MonoBehaviour
             MapThreadInfo<MeshData> threadInfoMesh = meshDataTheadInfoQueue.Dequeue();
             threadInfoMesh.callback(threadInfoMesh.parameter);
         }    
+    }
+    void Awake()
+    {
+        // 1. Grab the active config preset FIRST so we can read its data
+        if (availablePresets != null && availablePresets.Count > 0)
+        {
+            activePresetIndex = Mathf.Clamp(activePresetIndex, 0, availablePresets.Count - 1);
+            noisePreset = availablePresets[activePresetIndex].noisePreset;
+        }
+
+        // 2. NOW the check will pass!
+        if (textureData != null && terrainMaterial != null && noisePreset != null)
+        {
+            textureData.ApplyToMat(terrainMaterial);
+
+            float maxHeight = noisePreset.settings[0].meshHeightMultiplier;
+            float minHeight = 0f; 
+
+            textureData.UpdateMeshHeights(terrainMaterial, minHeight, maxHeight);
+        }
     }
 
     MapData GenerateMap(Vector2 centre)
