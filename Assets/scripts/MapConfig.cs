@@ -4,6 +4,8 @@ public class MapConfig : ScriptableObject
 {
     public string configName = "New config";
 
+    public bool enableOcean = true;
+
     [Header("Preset prefrences")]
     public NoisePreset noisePreset;
     public BiomePreset biomePreset;

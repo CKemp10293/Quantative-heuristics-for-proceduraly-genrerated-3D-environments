@@ -67,5 +67,5 @@
         "*.sln": "*.csproj",
         "*.slnx": "*.csproj"
     },
-    "dotnet.defaultSolution": "Diss.slnx"
+    "dotnet.defaultSolution": "Diss_demo_test.slnx"
 }

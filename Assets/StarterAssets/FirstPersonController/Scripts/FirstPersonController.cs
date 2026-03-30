@@ -54,6 +54,7 @@ namespace StarterAssets
 
 		// swimming
 		[Header("Ocean Settings")]
+		public bool oceanEnabled = true;
     	public float waterLevel = 12f; // EXACTLY matches your HDRP Ocean Y-position
     	public float waterDrag = 2f;   // Slows the player down in water
     	public float buoyancy = 1f;    // Pushes the player up to the surface
@@ -132,7 +133,7 @@ namespace StarterAssets
 
 		private void Update()
 		{
-			isSwimming = transform.position.y < (waterLevel - 0.2f);
+			isSwimming = oceanEnabled && transform.position.y < (waterLevel - 0.2f);
 
 			if (isSwimming)
 			{
@@ -318,19 +319,14 @@ namespace StarterAssets
             // 2. Handle the Post-Processing Fade
             if (underwaterVolume != null)
             {
-                // Fact: We need the exact world height of the camera "eyes", not the player's feet!
-                float cameraWorldY = CinemachineCameraTarget.transform.position.y;
-                
-                // Calculate exactly how deep the camera is. 
-                // If depth is positive, we are underwater. If negative, we are in the air.
-                float depth = waterLevel - cameraWorldY;
-                
-                // We use a tiny 0.15 meter transition zone. 
-                // This means the exact millisecond the water line crosses the camera lens, it snaps to 1 (Blurry) or 0 (Clear).
-                float targetWeight = Mathf.Clamp01(depth / 0.15f); 
-                
-                // Use a very fast speed (15f) so the water visually "clears" off the screen instantly when you surface
-                underwaterVolume.weight = Mathf.Lerp(underwaterVolume.weight, targetWeight, Time.deltaTime * 15f);
+                float targetWeight = 0f;
+				if (oceanEnabled)
+				{
+					float cameraWorldY = CinemachineCameraTarget.transform.position.y;
+                    float depth = waterLevel - cameraWorldY;
+                    targetWeight = Mathf.Clamp01(depth / 0.15f);
+				}
+				underwaterVolume.weight = Mathf.Lerp(underwaterVolume.weight, targetWeight, Time.deltaTime * 15f);
             }
         }
 

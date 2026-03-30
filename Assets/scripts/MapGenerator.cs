@@ -33,6 +33,7 @@ public class MapGenerator : MonoBehaviour
     private TreePreset treePreset;
     public TextureData textureData;
     public Material terrainMaterial;
+    public GameObject oceanObject;
 
     public bool useGPUInstancing = true;
     // queue for map info (colours and look ect.)
@@ -42,6 +43,8 @@ public class MapGenerator : MonoBehaviour
 
     public void DrawMapInEditor()
     {
+
+        UpdateEnvSetting();
         MapData mapData = GenerateMap(Vector2.zero);
         MapDisplay display = FindFirstObjectByType<MapDisplay>();
         if (drawMode == DrawMode.NOISEMAP)
@@ -115,6 +118,7 @@ public class MapGenerator : MonoBehaviour
     }
     void Awake()
     {
+        UpdateEnvSetting();
         // 1. Grab the active config preset FIRST so we can read its data
         if (availablePresets != null && availablePresets.Count > 0)
         {
@@ -137,7 +141,7 @@ public class MapGenerator : MonoBehaviour
     MapData GenerateMap(Vector2 centre)
     {
         activePresetIndex = Mathf.Clamp(activePresetIndex, 0, availablePresets.Count - 1);
-        // 2. LOAD DATA: Pull the sub-files from the Master Config
+        // Pull the sub-files from the Master Config
         MapConfig activeConfig = availablePresets[activePresetIndex];
         noisePreset = activeConfig.noisePreset;
         biomePreset = activeConfig.biomePreset;
@@ -173,7 +177,7 @@ public class MapGenerator : MonoBehaviour
                 float currentHeight = noiseMap[x + 1,y + 1];
                 
                 int currentBiomeIndex = -1; // Track which biome we are in
-                if ( biomePreset != null && biomePreset.regions != null)
+                if ( !object.ReferenceEquals(biomePreset,null) && biomePreset.regions != null)
                 {
                     for (int i = 0; i < biomePreset.regions.Length; i++)
                 {
@@ -189,13 +193,13 @@ public class MapGenerator : MonoBehaviour
                 }
                 }
                 // Adding tree logic
-                if(treePreset != null)
+                if(!object.ReferenceEquals(treePreset,null))
                 {
                     for (int i = 0; i < prefabTypeCount; i++)
                     {
                         TreeConfig config = treePreset.prefabConfigs[i];
 
-                        if(config == null || config.prefab == null) continue;
+                        if(config == null || object.ReferenceEquals(config.prefab,null)) continue;
                         if(currentBiomeIndex != config.spawnOnBiomeIndex) continue;
 
                         if(treeRNG.NextDouble() < config.density)
@@ -220,6 +224,28 @@ public class MapGenerator : MonoBehaviour
             }
         }
         return new MapData(noiseMap,colourMap,prefabMatrices,activePresetIndex);
+    }
+
+    public void UpdateEnvSetting()
+    {
+        if (availablePresets == null || availablePresets.Count == 0)
+        {
+            return;
+        }
+
+        activePresetIndex = Mathf.Clamp(activePresetIndex,0,availablePresets.Count);
+        MapConfig activeConfig = availablePresets[activePresetIndex];
+
+        if(oceanObject != null)
+        {
+            oceanObject.SetActive(activeConfig.enableOcean);
+        }
+
+        StarterAssets.FirstPersonController player = FindFirstObjectByType<StarterAssets.FirstPersonController>();
+        if (player != null)
+        {
+            player.oceanEnabled = activeConfig.enableOcean;
+        } 
     }
 
     // Generic struct to hold map and mesh information for threading.
