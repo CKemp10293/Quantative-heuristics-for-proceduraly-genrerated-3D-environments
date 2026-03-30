@@ -13,6 +13,8 @@ MonoBehaviour:
   m_Name: Forest Config
   m_EditorClassIdentifier: Assembly-CSharp::MapConfig
   configName: Forest
+  enableOcean: 0
   noisePreset: {fileID: 11400000, guid: c13c4a72880d0a935989e7b793d9708d, type: 2}
   biomePreset: {fileID: 11400000, guid: 39df0585e13d61a10873ebaaaf1d0011, type: 2}
   treePreset: {fileID: 11400000, guid: b204ce19bda7830d5894be6f0582bda2, type: 2}
+  textureData: {fileID: 0}

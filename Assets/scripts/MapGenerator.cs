@@ -31,7 +31,6 @@ public class MapGenerator : MonoBehaviour
     private BiomePreset biomePreset;
     private NoisePreset noisePreset;
     private TreePreset treePreset;
-    public TextureData textureData;
     public Material terrainMaterial;
     public GameObject oceanObject;
 
@@ -126,16 +125,6 @@ public class MapGenerator : MonoBehaviour
             noisePreset = availablePresets[activePresetIndex].noisePreset;
         }
 
-        // 2. NOW the check will pass!
-        if (textureData != null && terrainMaterial != null && noisePreset != null)
-        {
-            textureData.ApplyToMat(terrainMaterial);
-
-            float maxHeight = noisePreset.settings[0].meshHeightMultiplier;
-            float minHeight = 0f; 
-
-            textureData.UpdateMeshHeights(terrainMaterial, minHeight, maxHeight);
-        }
     }
 
     MapData GenerateMap(Vector2 centre)
@@ -245,7 +234,18 @@ public class MapGenerator : MonoBehaviour
         if (player != null)
         {
             player.oceanEnabled = activeConfig.enableOcean;
-        } 
+        }
+
+        if (activeConfig.textureData != null && terrainMaterial != null && activeConfig.noisePreset != null)
+        {
+            // Send the arrays to the GPU
+            activeConfig.textureData.ApplyToMat(terrainMaterial);
+
+            // Send the min/max heights to the GPU so the shader blends accurately
+            float maxHeight = activeConfig.noisePreset.settings[0].meshHeightMultiplier;
+            float minHeight = 0f; 
+            activeConfig.textureData.UpdateMeshHeights(terrainMaterial, minHeight, maxHeight);
+        }
     }
 
     // Generic struct to hold map and mesh information for threading.

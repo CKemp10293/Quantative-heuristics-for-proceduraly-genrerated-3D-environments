@@ -10,4 +10,6 @@ public class MapConfig : ScriptableObject
     public NoisePreset noisePreset;
     public BiomePreset biomePreset;
     public TreePreset treePreset;
+
+    public TextureData textureData;
 }
