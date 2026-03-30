@@ -15,6 +15,10 @@ MonoBehaviour:
   configName: Forest
   enableOcean: 0
   mapAudio: {fileID: 8300000, guid: ec45f002847c442e2a4589b91b601d09, type: 3}
+  enableWind: 1
+  windColor: {r: 0.6039216, g: 0.8039216, b: 0.1960784, a: 1}
+  windThickness: 50
+  windSpeedMultiplier: 1
   noisePreset: {fileID: 11400000, guid: c13c4a72880d0a935989e7b793d9708d, type: 2}
   biomePreset: {fileID: 11400000, guid: 39df0585e13d61a10873ebaaaf1d0011, type: 2}
   treePreset: {fileID: 11400000, guid: b204ce19bda7830d5894be6f0582bda2, type: 2}

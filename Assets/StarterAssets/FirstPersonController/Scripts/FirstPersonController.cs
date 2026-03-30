@@ -63,6 +63,9 @@ namespace StarterAssets
 		[Header("Audio Settings")]
 		public AudioSource ambientAudioSource;
 
+		[Header("VFX Settings")]
+		public ParticleSystem windParticleSystem;
+
 		[Header("Swimming Effects")]
         public float swimBobSpeed = 2f;
         public float swimBobAmount = 0.08f;

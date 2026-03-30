@@ -255,6 +255,32 @@ public class MapGenerator : MonoBehaviour
                 player.ambientAudioSource.Play();
             }
         }
+
+        if (player != null && player.windParticleSystem != null)
+        {
+            if (activeConfig.enableWind)
+            {
+                // Turn it on if it was off
+                if (!player.windParticleSystem.isPlaying) player.windParticleSystem.Play();
+
+                // Inject the settings into the Particle System modules
+                var mainModule = player.windParticleSystem.main;
+                var emissionModule = player.windParticleSystem.emission;
+                var velocityModule = player.windParticleSystem.velocityOverLifetime;
+
+                mainModule.startColor = activeConfig.windColor;
+                emissionModule.rateOverTime = activeConfig.windThickness;
+                
+                // Multiply the baseline X and Z velocity we set in the editor
+                velocityModule.speedModifier = activeConfig.windSpeedMultiplier;
+            }
+            else
+            {
+                // If this biome shouldn't have wind (like an underwater or indoor scene), turn it off
+                player.windParticleSystem.Stop();
+                player.windParticleSystem.Clear();
+            }
+        }
     }
 
     // Generic struct to hold map and mesh information for threading.

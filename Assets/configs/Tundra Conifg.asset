@@ -13,6 +13,13 @@ MonoBehaviour:
   m_Name: Tundra Conifg
   m_EditorClassIdentifier: Assembly-CSharp::MapConfig
   configName: Tundra
+  enableOcean: 1
+  mapAudio: {fileID: 0}
+  enableWind: 0
+  windColor: {r: 1, g: 1, b: 1, a: 0.5}
+  windThickness: 50
+  windSpeedMultiplier: 1
   noisePreset: {fileID: 11400000, guid: 2aeaaf657d3acbfb3962c7f0321e255c, type: 2}
   biomePreset: {fileID: 11400000, guid: 1959e1a1e2bddc65d923a6e04834678b, type: 2}
   treePreset: {fileID: 11400000, guid: da283599e8ced4fb48fee7b6c6489a57, type: 2}
+  textureData: {fileID: 0}
