@@ -76,7 +76,7 @@ public class TreeGenerator : MonoBehaviour
                         batch.ToArray(), 
                         batch.Count, 
                         null,
-                        ShadowCastingMode.Off, 
+                        ShadowCastingMode.On, 
                         true,
                         gameObject.layer,
                         null,
