@@ -17,4 +17,4 @@ MonoBehaviour:
   noisePreset: {fileID: 11400000, guid: c13c4a72880d0a935989e7b793d9708d, type: 2}
   biomePreset: {fileID: 11400000, guid: 39df0585e13d61a10873ebaaaf1d0011, type: 2}
   treePreset: {fileID: 11400000, guid: b204ce19bda7830d5894be6f0582bda2, type: 2}
-  textureData: {fileID: 0}
+  textureData: {fileID: 11400000, guid: 4b0ec63b959a947109be324fceb5aeb7, type: 2}
