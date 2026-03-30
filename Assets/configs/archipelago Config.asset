@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MapConfig
   configName: archipeligo
   enableOcean: 1
+  mapAudio: {fileID: 8300000, guid: 6840abfc48959468ba87a105d707d9e1, type: 3}
   noisePreset: {fileID: 11400000, guid: 376cadc04b9ce2a5b90416828eae442e, type: 2}
   biomePreset: {fileID: 11400000, guid: 0691ce020a47e0b4d8514946336a534b, type: 2}
   treePreset: {fileID: 11400000, guid: c7688f1d523bc8cad9ae4336c2348903, type: 2}

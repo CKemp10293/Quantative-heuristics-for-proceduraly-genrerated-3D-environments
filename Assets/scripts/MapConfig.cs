@@ -6,6 +6,8 @@ public class MapConfig : ScriptableObject
 
     public bool enableOcean = true;
 
+    public AudioClip mapAudio;
+
     [Header("Preset prefrences")]
     public NoisePreset noisePreset;
     public BiomePreset biomePreset;

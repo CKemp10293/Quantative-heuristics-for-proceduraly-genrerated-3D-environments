@@ -245,6 +245,16 @@ public class MapGenerator : MonoBehaviour
             float minHeight = 0f; 
             activeConfig.textureData.UpdateMeshHeights(terrainMaterial, minHeight, maxHeight);
         }
+
+        if (player != null && player.ambientAudioSource != null && activeConfig.mapAudio != null)
+        {
+            // Only swap and restart the audio if it's actually a different biome track.
+            if (player.ambientAudioSource.clip != activeConfig.mapAudio)
+            {
+                player.ambientAudioSource.clip = activeConfig.mapAudio;
+                player.ambientAudioSource.Play();
+            }
+        }
     }
 
     // Generic struct to hold map and mesh information for threading.

@@ -60,6 +60,9 @@ namespace StarterAssets
     	public float buoyancy = 1f;    // Pushes the player up to the surface
 		public float swimSpeed = 3f;
 
+		[Header("Audio Settings")]
+		public AudioSource ambientAudioSource;
+
 		[Header("Swimming Effects")]
         public float swimBobSpeed = 2f;
         public float swimBobAmount = 0.08f;
