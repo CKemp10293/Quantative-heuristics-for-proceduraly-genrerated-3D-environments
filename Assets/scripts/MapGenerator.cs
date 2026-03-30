@@ -18,7 +18,6 @@ public class MapGenerator : MonoBehaviour
 
     [Range(0,6)] // Clamp variable. mulitply by two to get the 12.
     public int EditorLevelOfDetail;
-    public float noiseScale;
     public bool autoUpdate;
     public Vector2 offset;
 
@@ -136,7 +135,7 @@ public class MapGenerator : MonoBehaviour
         biomePreset = activeConfig.biomePreset;
         treePreset = activeConfig.treePreset;
 
-        float[,] noiseMap = Noise.GenerateNoiseMap(mapChunkSize + 2, mapChunkSize + 2, noiseScale, noisePreset.settings[0].octaves, noisePreset.settings[0].persistance,
+        float[,] noiseMap = Noise.GenerateNoiseMap(mapChunkSize + 2, mapChunkSize + 2,noisePreset.settings[0].noiseScale, noisePreset.settings[0].octaves, noisePreset.settings[0].persistance,
          noisePreset.settings[0].lacunarity,noisePreset.settings[0].seed, centre + offset,noisePreset.settings[0].normalisationMode );
 
         Color[] colourMap = new Color[mapChunkSize*mapChunkSize];

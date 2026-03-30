@@ -42,4 +42,5 @@ MonoBehaviour:
       m_RotationOrder: 0
     seed: 1
     octaves: 4
+    noiseScale: 65
     normalisationMode: 1

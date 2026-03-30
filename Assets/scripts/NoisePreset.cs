@@ -17,6 +17,7 @@ public struct TypeOfNoise
     public AnimationCurve meshHeightCurve;
     public int seed;
     public int octaves;
+    public float noiseScale;
 
     public Noise.NormalisationMode normalisationMode;
 
