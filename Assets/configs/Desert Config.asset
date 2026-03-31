@@ -14,12 +14,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MapConfig
   configName: Desert
   enableOcean: 0
-  mapAudio: {fileID: 0}
+  mapAudio: {fileID: 8300000, guid: 6840abfc48959468ba87a105d707d9e1, type: 3}
   enableWind: 1
   windColor: {r: 1, g: 0.6470588, b: 0, a: 1}
-  windThickness: 200
+  windThickness: 400
   windSpeedMultiplier: 3
+  particleWindSize: 1
+  birdPrefab: {fileID: 0}
+  birdSpawnRate: 5
   noisePreset: {fileID: 11400000, guid: b893de9279b66d3c1bfc9308c8a6c3b5, type: 2}
   biomePreset: {fileID: 11400000, guid: fda64c3ffb8cea8569afb008923fb538, type: 2}
-  treePreset: {fileID: 11400000, guid: 828054defc8231218b44f63cfe1b743f, type: 2}
-  textureData: {fileID: 0}
+  treePreset: {fileID: 11400000, guid: dfa6b6f2be0124de2b046c2c00a1560c, type: 2}
+  textureData: {fileID: 11400000, guid: c230e0b4d23924a419f1df8ff54241e9, type: 2}

@@ -263,10 +263,14 @@ public class MapGenerator : MonoBehaviour
                 // Turn it on if it was off
                 if (!player.windParticleSystem.isPlaying) player.windParticleSystem.Play();
 
+                
+
                 // Inject the settings into the Particle System modules
                 var mainModule = player.windParticleSystem.main;
                 var emissionModule = player.windParticleSystem.emission;
                 var velocityModule = player.windParticleSystem.velocityOverLifetime;
+
+                mainModule.startSize = activeConfig.particleWindSize;
 
                 mainModule.startColor = activeConfig.windColor;
                 emissionModule.rateOverTime = activeConfig.windThickness;

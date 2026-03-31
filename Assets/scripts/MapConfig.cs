@@ -13,6 +13,7 @@ public class MapConfig : ScriptableObject
     public Color windColor = new Color(1f, 1f, 1f, 0.5f); // Default to semi-transparent white
     [Range(10, 500)] public float windThickness = 50f;    // How many particles to spawn
     public float windSpeedMultiplier = 1f;
+    public float particleWindSize = 0.04f;
 
     [Header("Wildlife Settings")]
     public GameObject birdPrefab; // The specific bird for this scene

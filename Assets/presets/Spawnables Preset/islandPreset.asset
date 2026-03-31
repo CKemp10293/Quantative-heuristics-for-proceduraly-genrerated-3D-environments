@@ -24,7 +24,7 @@ MonoBehaviour:
   - name: palm
     prefab: {fileID: 6607498677192992508, guid: 16fb34314974e0f4c9e7e5a3bd93d6fb, type: 3}
     collisionPrefab: {fileID: 968833272184807230, guid: d16ec87812c0947de8bbcf4366df77bc, type: 3}
-    spawnOnBiomeIndex: 3
+    spawnOnBiomeIndex: 4
     density: 0.1
     minScale: 0.2
     maxScale: 0.75

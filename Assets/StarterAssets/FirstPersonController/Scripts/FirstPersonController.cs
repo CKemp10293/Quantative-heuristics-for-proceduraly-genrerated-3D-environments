@@ -72,7 +72,10 @@ namespace StarterAssets
         public Volume underwaterVolume; // Link to our HDRP FX
         private float defaultCameraY;
 
+		[Header("Animation Settings")]
+    	public Animator playerAnimator; 
     	private CharacterController controller;
+
     	private Vector3 velocity;
     	private bool isGrounded;
     	private bool isSwimming;
@@ -123,6 +126,7 @@ namespace StarterAssets
 
 		private void Start()
 		{
+			controller = GetComponent<CharacterController>();
 			defaultCameraY = CinemachineCameraTarget.transform.localPosition.y;
 			_controller = GetComponent<CharacterController>();
 			_input = GetComponent<StarterAssetsInputs>();
@@ -151,6 +155,18 @@ namespace StarterAssets
 				GroundedCheck();
 				Move();
 			};
+
+			if (playerAnimator != null && controller != null)
+        	{
+            	// We only want the horizontal speed
+            	Vector3 horizontalVelocity = new Vector3(controller.velocity.x, 0f, controller.velocity.z);
+            
+            	// magnitude converts the 3D velocity vector into a single float number 
+            	float currentSpeed = horizontalVelocity.magnitude;
+
+            	// Send that number to the "Speed" parameter in Blend Tree
+            	playerAnimator.SetFloat("Speed", currentSpeed);
+        	}
 		}
 
 		private void LateUpdate()

@@ -13,12 +13,6 @@ MonoBehaviour:
   m_Name: Snowy Tundra
   m_EditorClassIdentifier: Assembly-CSharp::BiomePreset
   regions:
-  - name: Ice Water
-    height: 0.1
-    colour: {r: 0.23529412, g: 0.56078434, b: 0.59607846, a: 0}
-  - name: Snowy shore
-    height: 0.2
-    colour: {r: 0.50980395, g: 0.7058824, b: 0.73333335, a: 0}
   - name: Tundra
     height: 0.3
     colour: {r: 0.41960785, g: 0.4392157, b: 0.24705882, a: 0}
