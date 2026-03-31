@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 [CreateAssetMenu (fileName = "New Map Config",menuName = "Map generator config")]
 public class MapConfig : ScriptableObject
 {
@@ -7,6 +8,10 @@ public class MapConfig : ScriptableObject
     public bool enableOcean = true;
 
     public AudioClip mapAudio;
+
+    [Header("UI settings")]
+    public string sceneName;
+    public Sprite backgroundImage;
 
     [Header("Wind VFX Settings")]
     public bool enableWind = true;

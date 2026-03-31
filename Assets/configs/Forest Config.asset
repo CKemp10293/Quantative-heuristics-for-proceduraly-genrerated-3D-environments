@@ -15,6 +15,8 @@ MonoBehaviour:
   configName: Forest
   enableOcean: 0
   mapAudio: {fileID: 8300000, guid: ec45f002847c442e2a4589b91b601d09, type: 3}
+  sceneName: Forest
+  backgroundImage: {fileID: 21300000, guid: d1d551fc5f4ad4f248da219abb819af0, type: 3}
   enableWind: 1
   windColor: {r: 0.6039216, g: 0.8039216, b: 0.1960784, a: 1}
   windThickness: 50

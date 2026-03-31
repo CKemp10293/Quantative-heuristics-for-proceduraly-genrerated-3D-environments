@@ -15,6 +15,8 @@ MonoBehaviour:
   configName: Tundra
   enableOcean: 0
   mapAudio: {fileID: 0}
+  sceneName: Tundra
+  backgroundImage: {fileID: 21300000, guid: 8e896dd2161264608a2215062b4ee65e, type: 3}
   enableWind: 0
   windColor: {r: 1, g: 1, b: 1, a: 0.5}
   windThickness: 50

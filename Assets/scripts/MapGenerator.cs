@@ -116,6 +116,18 @@ public class MapGenerator : MonoBehaviour
     }
     void Awake()
     {
+        if (mainMenuController.selectedBiome != null && availablePresets != null)
+        {
+            for (int i = 0; i < availablePresets.Count; i++)
+            {
+                if (availablePresets[i] == mainMenuController.selectedBiome)
+                {
+                    activePresetIndex = i;
+                    break; 
+                }
+            }
+        }
+
         UpdateEnvSetting();
         // 1. Grab the active config preset FIRST so we can read its data
         if (availablePresets != null && availablePresets.Count > 0)
