@@ -13,6 +13,16 @@ public class MapConfig : ScriptableObject
     public string sceneName;
     public Sprite backgroundImage;
 
+    [Header("Biome-Specific Audio & Heights")]
+    [Tooltip("Below this height, the player walks on Sand for THIS specific biome")]
+    public float sandMaxHeight;
+    [Tooltip("Below this height, the player walks on Grass for THIS specific biome")]
+    public float grassMaxHeight;
+    
+    public AudioClip[] biomeSnowFootsteps; 
+    public AudioClip[] biomeGrassFootsteps;
+    public AudioClip[] biomeSandFootsteps;
+
     [Header("Wind VFX Settings")]
     public bool enableWind = true;
     public Color windColor = new Color(1f, 1f, 1f, 0.5f); // Default to semi-transparent white

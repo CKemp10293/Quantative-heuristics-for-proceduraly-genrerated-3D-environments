@@ -245,6 +245,13 @@ public class MapGenerator : MonoBehaviour
         if (player != null)
         {
             player.oceanEnabled = activeConfig.enableOcean;
+            player.sandMaxHeight = activeConfig.sandMaxHeight;
+            player.grassMaxHeight = activeConfig.grassMaxHeight;
+
+            // Overwrite the player's audio arrays with this specific biome's audio
+            player.snowFootsteps = activeConfig.biomeSnowFootsteps;
+            player.grassFootsteps = activeConfig.biomeGrassFootsteps;
+            player.sandFootsteps = activeConfig.biomeSandFootsteps;
         }
 
         if (activeConfig.textureData != null && terrainMaterial != null && activeConfig.noisePreset != null)

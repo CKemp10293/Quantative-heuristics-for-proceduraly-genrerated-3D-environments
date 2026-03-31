@@ -17,6 +17,13 @@ MonoBehaviour:
   mapAudio: {fileID: 8300000, guid: 6840abfc48959468ba87a105d707d9e1, type: 3}
   sceneName: Islands
   backgroundImage: {fileID: 21300000, guid: e58c73953de794a32acb18d436cc0c05, type: 3}
+  sandMaxHeight: 2
+  grassMaxHeight: 40
+  biomeSnowFootsteps: []
+  biomeGrassFootsteps:
+  - {fileID: 8300000, guid: c8c25e9a8e8ad40a49962d6d1d6bf50f, type: 3}
+  biomeSandFootsteps:
+  - {fileID: 8300000, guid: 18b2ef09f655646d39335861684e9f0c, type: 3}
   enableWind: 1
   windColor: {r: 1, g: 0.8431373, b: 0, a: 1}
   windThickness: 50

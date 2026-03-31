@@ -1,6 +1,8 @@
 ﻿using UnityEngine;
 using UnityEngine.Rendering;
 using System;
+using NUnit.Framework;
+
 
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
@@ -64,6 +66,21 @@ namespace StarterAssets
 
 		[Header("Audio Settings")]
 		public AudioSource ambientAudioSource;
+
+		[Header("Dynamic Footstep Audio")]
+    	public AudioSource footstepAudioSource;
+    	public float baseStepRate = 0.5f; // How long between steps at normal walking speed
+    	private float stepTimer = 0f;
+
+		[HideInInspector] public float sandMaxHeight;
+    	[HideInInspector] public float grassMaxHeight;
+    	[HideInInspector] public AudioClip[] snowFootsteps; 
+    	[HideInInspector] public AudioClip[] grassFootsteps;
+    	[HideInInspector] public AudioClip[] sandFootsteps;
+
+    	[Header("Surface Audio Clips")]
+    	// Arrays allow us to add 3 or 4 variations of a sound so it doesn't sound like a machine gun
+    	public AudioClip[] swimStrokes;
 
 		[Header("VFX Settings")]
 		public ParticleSystem windParticleSystem;
@@ -145,6 +162,7 @@ namespace StarterAssets
 
 		private void Update()
 		{
+			float currentSpeed = 0f;
 			isSwimming = oceanEnabled && transform.position.y < (waterLevel - 0.2f);
 
 			if (isSwimming)
@@ -160,8 +178,6 @@ namespace StarterAssets
 
 			if (playerAnimator != null && controller != null)
         	{
-            	float currentSpeed = 0f;
-
             	if (oceanEnabled)
             	{
                 	// Bypass physics and check the keyboard directly (W/A/S/D or Joysticks)
@@ -178,6 +194,8 @@ namespace StarterAssets
             	playerAnimator.SetFloat("Speed", currentSpeed);
             	playerAnimator.SetBool("IsSwimming", oceanEnabled);
         	}
+
+			HandleDynamicAudio(currentSpeed, isSwimming);
 		}
 
 		private void LateUpdate()
@@ -361,6 +379,61 @@ namespace StarterAssets
 				}
 				underwaterVolume.weight = Mathf.Lerp(underwaterVolume.weight, targetWeight, Time.deltaTime * 15f);
             }
+        }
+
+		public void HandleDynamicAudio(float speed, bool isSwimming)
+        {
+            // Fact Check: If we aren't moving, do not play any movement sounds.
+        if(speed < 0.1f) return;
+
+        stepTimer -= Time.deltaTime;
+
+        if (stepTimer <= 0f)
+        {
+            if (isSwimming)
+            {
+                PlayRandomClip(swimStrokes);
+                stepTimer = baseStepRate * 2f;
+            }
+            else if (controller.isGrounded)
+            {
+                // Shoot the raycast down to find exactly what we are standing on
+                if (Physics.Raycast(transform.position, Vector3.down, out RaycastHit hit, 2.0f))
+                {
+                    
+                    // Extract the exact mathematical height of the ground we hit
+                    float groundHeight = hit.point.y;
+
+                    // Compare the height to our defined biomes
+                    if (groundHeight <= sandMaxHeight)
+                    {
+                        PlayRandomClip(sandFootsteps);
+                    }
+                    else if (groundHeight <= grassMaxHeight)
+                    {
+                        PlayRandomClip(grassFootsteps);
+                    }
+                    else
+                    {
+                        // If they are higher than the grass limit, it must be snow/rock
+                            PlayRandomClip(snowFootsteps);
+                    }
+                    
+                }
+                
+                // Speed calculation for how fast the steps play
+                stepTimer = baseStepRate / (speed / MoveSpeed);
+            }
+        }
+	    }
+
+		private void PlayRandomClip(AudioClip[] clips)
+        {
+            if (clips.Length > 0)
+        {
+            int index = UnityEngine.Random.Range(0, clips.Length);
+            footstepAudioSource.PlayOneShot(clips[index]);
+        }
         }
 
 		private static float ClampAngle(float lfAngle, float lfMin, float lfMax)
