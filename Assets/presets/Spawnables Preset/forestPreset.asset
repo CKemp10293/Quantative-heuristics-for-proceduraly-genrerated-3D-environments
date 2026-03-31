@@ -9,39 +9,39 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
-  m_Name: forestPrefabPreset
+  m_Script: {fileID: 11500000, guid: 5019bcf90624d4991aac7ad4d925ce2d, type: 3}
+  m_Name: forestPreset
   m_EditorClassIdentifier: Assembly-CSharp::TreePreset
   prefabConfigs:
   - name: TreeOne
     prefab: {fileID: 102970, guid: f88e0c5504d699d4ebb950b8944bffcb, type: 3}
     collisionPrefab: {fileID: 968833272184807230, guid: d16ec87812c0947de8bbcf4366df77bc, type: 3}
-    spawnOnBiomeIndex: 1
-    density: 0.1
-    minScale: 0.5
+    spawnOnBiomeIndex: 0
+    density: 0.01
+    minScale: 1
     maxScale: 1
     heightOffset: 0
-  - name: treeTwo
+  - name: TreeTwo
     prefab: {fileID: 190414, guid: 653c97bd88b4b084d87714542c43ee5a, type: 3}
     collisionPrefab: {fileID: 968833272184807230, guid: d16ec87812c0947de8bbcf4366df77bc, type: 3}
-    spawnOnBiomeIndex: 1
-    density: 0.1
-    minScale: 0.5
+    spawnOnBiomeIndex: 0
+    density: 0.01
+    minScale: 1
     maxScale: 1
     heightOffset: 0
-  - name: treeThree
+  - name: TreeThree
     prefab: {fileID: 177546, guid: 247e09e89c199dd46b07af0a0a46b8ac, type: 3}
     collisionPrefab: {fileID: 968833272184807230, guid: d16ec87812c0947de8bbcf4366df77bc, type: 3}
-    spawnOnBiomeIndex: 2
-    density: 0.1
-    minScale: 0.5
+    spawnOnBiomeIndex: 0
+    density: 0.01
+    minScale: 1
     maxScale: 1
     heightOffset: 0
-  - name: lillypad
-    prefab: {fileID: 138878, guid: 69a1ff74e5e238140a000e829c164d57, type: 3}
-    collisionPrefab: {fileID: 0}
+  - name: Log
+    prefab: {fileID: 114594, guid: e0bcb36554be1124b8a89d63037350be, type: 3}
+    collisionPrefab: {fileID: 968833272184807230, guid: d16ec87812c0947de8bbcf4366df77bc, type: 3}
     spawnOnBiomeIndex: 0
-    density: 0.1
-    minScale: 0.5
+    density: 0.001
+    minScale: 1
     maxScale: 1
     heightOffset: 0

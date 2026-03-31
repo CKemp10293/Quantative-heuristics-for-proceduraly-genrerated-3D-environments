@@ -15,11 +15,3 @@ public class TreeConfig
     public float maxScale = 2f;
     public float heightOffset = 0.5f;
 }
-
-[CreateAssetMenu (fileName = "New prefab preset", menuName = "Prefab preset")]
-public class TreePreset : ScriptableObject
-{
-
-    [Header("Prefab Variant")]
-    public TreeConfig[] prefabConfigs;
-}
