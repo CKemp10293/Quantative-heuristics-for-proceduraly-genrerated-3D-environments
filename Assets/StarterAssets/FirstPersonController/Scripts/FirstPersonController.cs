@@ -1,5 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.Rendering;
+using System;
+
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif
@@ -158,14 +160,23 @@ namespace StarterAssets
 
 			if (playerAnimator != null && controller != null)
         	{
-            	// We only want the horizontal speed
-            	Vector3 horizontalVelocity = new Vector3(controller.velocity.x, 0f, controller.velocity.z);
-            
-            	// magnitude converts the 3D velocity vector into a single float number 
-            	float currentSpeed = horizontalVelocity.magnitude;
+            	float currentSpeed = 0f;
 
-            	// Send that number to the "Speed" parameter in Blend Tree
+            	if (oceanEnabled)
+            	{
+                	// Bypass physics and check the keyboard directly (W/A/S/D or Joysticks)
+                	// If the player presses anything, force the speed to your SwimSpeed
+                	currentSpeed = _input.move.magnitude > 0.1f ? 3f : 0f;
+            	}
+            	else
+            	{
+                	// On land, use the standard physics velocity
+                	Vector3 horizontalVelocity = new Vector3(controller.velocity.x, 0f, controller.velocity.z);
+                	currentSpeed = horizontalVelocity.magnitude;
+            	}
+
             	playerAnimator.SetFloat("Speed", currentSpeed);
+            	playerAnimator.SetBool("IsSwimming", oceanEnabled);
         	}
 		}
 
