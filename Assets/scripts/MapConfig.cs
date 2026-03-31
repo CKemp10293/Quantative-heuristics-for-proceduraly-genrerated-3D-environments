@@ -14,6 +14,10 @@ public class MapConfig : ScriptableObject
     [Range(10, 500)] public float windThickness = 50f;    // How many particles to spawn
     public float windSpeedMultiplier = 1f;
 
+    [Header("Wildlife Settings")]
+    public GameObject birdPrefab; // The specific bird for this scene
+    public float birdSpawnRate = 5f;
+
     [Header("Preset prefrences")]
     public NoisePreset noisePreset;
     public BiomePreset biomePreset;

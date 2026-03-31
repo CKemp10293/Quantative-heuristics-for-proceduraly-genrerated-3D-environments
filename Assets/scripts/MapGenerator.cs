@@ -281,6 +281,13 @@ public class MapGenerator : MonoBehaviour
                 player.windParticleSystem.Clear();
             }
         }
+
+        BirdSpawner birdSpawner = player.GetComponent<BirdSpawner>();
+        if (birdSpawner != null)
+        {
+            birdSpawner.currentBirdPrefab = activeConfig.birdPrefab;
+            birdSpawner.spawnRate = activeConfig.birdSpawnRate;
+        }
     }
 
     // Generic struct to hold map and mesh information for threading.

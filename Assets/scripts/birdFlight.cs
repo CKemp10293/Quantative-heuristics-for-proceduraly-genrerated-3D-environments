@@ -2,15 +2,17 @@ using UnityEngine;
 
 public class birdFlight : MonoBehaviour
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    public float flySpeed = 15f;
+    public float lifeTime = 40f;
+
     void Start()
     {
-        
+        GetComponent<AudioSource>().pitch = Random.Range(0.8f, 1.2f);
+        Destroy(gameObject,lifeTime);
     }
 
-    // Update is called once per frame
     void Update()
     {
-        
+        transform.Translate(Vector3.one * flySpeed * Time.deltaTime);
     }
 }

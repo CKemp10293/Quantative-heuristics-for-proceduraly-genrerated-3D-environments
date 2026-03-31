@@ -19,6 +19,8 @@ MonoBehaviour:
   windColor: {r: 1, g: 0.8431373, b: 0, a: 1}
   windThickness: 50
   windSpeedMultiplier: 2
+  birdPrefab: {fileID: 4292170788808701894, guid: 75a4deae628b069438e0190f8c454051, type: 3}
+  birdSpawnRate: 5
   noisePreset: {fileID: 11400000, guid: 376cadc04b9ce2a5b90416828eae442e, type: 2}
   biomePreset: {fileID: 11400000, guid: 0691ce020a47e0b4d8514946336a534b, type: 2}
   treePreset: {fileID: 11400000, guid: c7688f1d523bc8cad9ae4336c2348903, type: 2}
