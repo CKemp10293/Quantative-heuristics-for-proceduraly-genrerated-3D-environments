@@ -178,21 +178,22 @@ namespace StarterAssets
 
 			if (playerAnimator != null && controller != null)
         	{
-            	if (oceanEnabled)
+            	if (isSwimming) 
             	{
-                	// Bypass physics and check the keyboard directly (W/A/S/D or Joysticks)
-                	// If the player presses anything, force the speed to your SwimSpeed
-                	currentSpeed = _input.move.magnitude > 0.1f ? 3f : 0f;
+                	// In water, bypass standard physics and force a steady swim speed
+                	currentSpeed = _input.move.magnitude > 0.1f ? swimSpeed : 0f; 
             	}
             	else
             	{
-                	// On land, use the standard physics velocity
+               		// On land, read the actual physics velocity
                 	Vector3 horizontalVelocity = new Vector3(controller.velocity.x, 0f, controller.velocity.z);
                 	currentSpeed = horizontalVelocity.magnitude;
             	}
 
             	playerAnimator.SetFloat("Speed", currentSpeed);
-            	playerAnimator.SetBool("IsSwimming", oceanEnabled);
+            
+            	// Only trigger the swim animation if the player is physically submerged
+            	playerAnimator.SetBool("IsSwimming", isSwimming);
         	}
 
 			HandleDynamicAudio(currentSpeed, isSwimming);
