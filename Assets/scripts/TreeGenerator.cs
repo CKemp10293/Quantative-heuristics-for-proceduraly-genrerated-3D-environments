@@ -9,7 +9,9 @@ public class TreeGenerator : MonoBehaviour
     [HideInInspector][SerializeField] private List<Material> treeMaterials = new List<Material>();
     [SerializeField] private List<Matrix4x4> allTransforms = new List<Matrix4x4>();
 
-    private List<List<Matrix4x4>> batches = new List<List<Matrix4x4>>();
+    private Matrix4x4[][] batchArrays;
+    private int[] batchCounts;
+    private bool isBatched = false;
     public void Initialise(List<Matrix4x4> transforms, GameObject prefab)
     {
         this.allTransforms = new List<Matrix4x4>(transforms);
@@ -33,36 +35,51 @@ public class TreeGenerator : MonoBehaviour
 
     void BuildBatches()
     {
-        batches.Clear();
-        if (allTransforms == null) return;
+        if (allTransforms == null || allTransforms.Count == 0) return;
+
+        // Build the chunks using temporary lists
+        List<List<Matrix4x4>> tempBatches = new List<List<Matrix4x4>>();
+        tempBatches.Add(new List<Matrix4x4>());
 
         int batchIndex = 0;
         int count = 0;
-        batches.Add(new List<Matrix4x4>());
 
         foreach (var t in allTransforms)
         {
-            batches[batchIndex].Add(t);
+            tempBatches[batchIndex].Add(t);
             count++;
-            if (count >= 1023)
+            if (count >= 1023) // Unity's strict instancing limit
             {
-                batches.Add(new List<Matrix4x4>());
+                tempBatches.Add(new List<Matrix4x4>());
                 batchIndex++;
                 count = 0;
             }
         }
+
+        // Convert to permanent arrays once
+        batchArrays = new Matrix4x4[tempBatches.Count][];
+        batchCounts = new int[tempBatches.Count];
+
+        for (int i = 0; i < tempBatches.Count; i++)
+        {
+            batchArrays[i] = tempBatches[i].ToArray(); // Allocation happens ONCE here
+            batchCounts[i] = tempBatches[i].Count;
+        }
+
+        isBatched = true;
     }
 
     void Update()
     {
-        if ((batches == null || batches.Count == 0) && allTransforms != null && allTransforms.Count > 0)
+       if (!isBatched && allTransforms != null && allTransforms.Count > 0)
         {
             BuildBatches();
         }
 
-        if (batches.Count > 0 && treeMesh != null && treeMaterials.Count > 0)
+        if (isBatched && treeMesh != null && treeMaterials.Count > 0)
         {
-            foreach (var batch in batches)
+            // OPTIMIZATION: Using a standard 'for' loop avoids the hidden enumerator allocation of 'foreach'
+            for (int b = 0; b < batchArrays.Length; b++)
             {
                 for (int i = 0; i < treeMesh.subMeshCount; i++)
                 {
@@ -71,10 +88,10 @@ public class TreeGenerator : MonoBehaviour
                         treeMesh, 
                         i, 
                         matToUse, 
-                        batch.ToArray(), 
-                        batch.Count, 
+                        batchArrays[b], // Passing the pre-built array (0 allocations)
+                        batchCounts[b], 
                         null,
-                        ShadowCastingMode.On, 
+                        ShadowCastingMode.Off, 
                         true,
                         gameObject.layer,
                         null,

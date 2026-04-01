@@ -1,7 +1,4 @@
 using UnityEngine;
-using System;
-using System.Collections.Generic;
-using Unity.VisualScripting;
 public static class Perlin
 {
     private static readonly int[] Permutation;

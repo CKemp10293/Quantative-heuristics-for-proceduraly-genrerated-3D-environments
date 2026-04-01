@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.UI;
 [CreateAssetMenu (fileName = "New Map Config",menuName = "Map generator config")]
 public class MapConfig : ScriptableObject
 {

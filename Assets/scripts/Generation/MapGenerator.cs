@@ -1,13 +1,8 @@
 using UnityEngine;
-using System.Collections;
-using UnityEngine.Rendering;
 using System.Collections.Generic;
 using System;
 using System.Threading;
-using System.Runtime.InteropServices;
 using Unity.Mathematics;
-using System.Linq;
-using Unity.VisualScripting;
 public class MapGenerator : MonoBehaviour
 {
     public enum DrawMode {NOISEMAP,COLOURMAP,MESH}

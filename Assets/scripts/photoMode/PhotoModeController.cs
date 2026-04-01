@@ -6,6 +6,7 @@ using System.Collections;
 public class PhotoModeController : MonoBehaviour
 {
     public CanvasGroup viewFinderUI;
+    public CanvasGroup invUI;
     public FirstPersonController playerController;
 
     public bool isPhotoModeActive = false;
@@ -69,34 +70,50 @@ public class PhotoModeController : MonoBehaviour
 
     IEnumerator CapturePhotoRoutine()
     {
-        // 1. Hide the Viewfinder UI from the math pixels
+        // Hide the Viewfinder UI from the math pixels
         viewFinderUI.alpha = 0f;
+        invUI.alpha = 0f;
 
-        // 2. Wait for the clean 3D frame (BEFORE the flash happens!)
+        // Wait for the clean 3D frame
         yield return new WaitForEndOfFrame();
 
-        // 3. Capture the actual game view!
+        // Capture the actual game view!
         Texture2D rawPhoto = ScreenCapture.CaptureScreenshotAsTexture();
         
-        // 4. NOW trigger the sensory polish (Sound & Flash)
+        
+        // Create the unique ID right now so both the image and JSON share it
+        string photoID = "Photo_" + System.DateTime.Now.ToString("yyyyMMdd_HHmmss_fff");
+        
+        // Downsample the 1080p image to 128x128 for lightning-fast math processing
+        Texture2D smallPhoto = ImageUtility.DownsampleTexture(rawPhoto, 128, 128);
+        
+        // Pass the small photo to your math script to get the 0-10 scores
+        PhotoMetadata metadata = PhotoAnalyser.AnalysePhoto(smallPhoto, photoID);
+        
+
+        // Sound & Flash
         if (cameraAudioSource != null && shutterSound != null)
         {
             cameraAudioSource.PlayOneShot(shutterSound);
         }
         if (screenFlashUI != null) screenFlashUI.alpha = 1f;
 
-        // 5. Restore Viewfinder & Hand the data to the hard drive
+        // Restore Viewfinder & Hand BOTH the data and the image to the hard drive
         viewFinderUI.alpha = 1f;
-        DiskIOWorker.SavePhotoToDisk(rawPhoto);
-        Destroy(rawPhoto); // Prevent RAM memory leaks
+        invUI.alpha = 1f;
+        DiskIOWorker.SavePhotoAndMetadata(rawPhoto, metadata);
+        
+        // Prevent RAM memory leaks by destroying BOTH textures
+        Destroy(rawPhoto); 
+        Destroy(smallPhoto);
 
-        // 6. Fade the white flash out smoothly over 0.2 seconds
+        // Fade the white flash out smoothly over 0.2 seconds
         if (screenFlashUI != null)
         {
             while (screenFlashUI.alpha > 0)
             {
                 screenFlashUI.alpha -= Time.deltaTime * 10f;
-                yield return null; // Wait for the next frame
+                yield return null; 
             }
         }
 

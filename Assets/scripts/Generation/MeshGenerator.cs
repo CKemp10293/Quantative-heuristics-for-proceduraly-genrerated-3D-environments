@@ -1,9 +1,4 @@
-using Unity.VisualScripting;
 using UnityEngine;
-using Unity.Collections;
-using Unity.Burst;
-using Unity.Mathematics;
-using Unity.Jobs;
 
 public static class MeshGenerator 
 {
