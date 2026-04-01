@@ -15,7 +15,7 @@ MonoBehaviour:
   settings:
   - lacunarity: 2
     persistance: 0.4
-    meshHeightMultiplier: 30
+    meshHeightMultiplier: 60
     meshHeightCurve:
       serializedVersion: 2
       m_Curve:
@@ -95,6 +95,6 @@ MonoBehaviour:
       m_PostInfinity: 2
       m_RotationOrder: 4
     seed: 1
-    octaves: 4
-    noiseScale: 40
+    octaves: 3
+    noiseScale: 80
     normalisationMode: 1
