@@ -14,12 +14,15 @@ public class PhotoModeController : MonoBehaviour
     private float originalMoveSpeed;
     private float originalSprintSpeed;
 
+    public CanvasGroup screenFlashUI;
+    public AudioSource cameraAudioSource;
+    public AudioClip shutterSound;
+
     private void Start()
     {
-        if (viewFinderUI != null)
-        {
-            SetViewFinderState(false);
-        }
+        if (viewFinderUI != null) SetViewFinderState(false);
+        
+        if (screenFlashUI != null) screenFlashUI.alpha = 0f;
 
         if (playerController != null)
         {
@@ -30,21 +33,13 @@ public class PhotoModeController : MonoBehaviour
 
     private void Update()
     {
-        if (Keyboard.current != null && Keyboard.current.digit1Key.wasPressedThisFrame)
-        {
-            if (hasCameraUnlocked)
-            {
-                TogglePhotoMode();
-            }
-        }
-
         if(isPhotoModeActive && Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
         {
             StartCoroutine(CapturePhotoRoutine());
         }
     }
 
-    private void TogglePhotoMode()
+    public void TogglePhotoMode()
     {
         isPhotoModeActive = !isPhotoModeActive;
         SetViewFinderState(isPhotoModeActive);
@@ -74,16 +69,36 @@ public class PhotoModeController : MonoBehaviour
 
     IEnumerator CapturePhotoRoutine()
     {
+        // 1. Hide the Viewfinder UI from the math pixels
         viewFinderUI.alpha = 0f;
+
+        // 2. Wait for the clean 3D frame (BEFORE the flash happens!)
         yield return new WaitForEndOfFrame();
 
+        // 3. Capture the actual game view!
         Texture2D rawPhoto = ScreenCapture.CaptureScreenshotAsTexture();
-        Debug.Log($"Photo Captured! Memory Resolution: {rawPhoto.width}x{rawPhoto.height}");
-        viewFinderUI.alpha = 0f;
+        
+        // 4. NOW trigger the sensory polish (Sound & Flash)
+        if (cameraAudioSource != null && shutterSound != null)
+        {
+            cameraAudioSource.PlayOneShot(shutterSound);
+        }
+        if (screenFlashUI != null) screenFlashUI.alpha = 1f;
 
+        // 5. Restore Viewfinder & Hand the data to the hard drive
+        viewFinderUI.alpha = 1f;
         DiskIOWorker.SavePhotoToDisk(rawPhoto);
+        Destroy(rawPhoto); // Prevent RAM memory leaks
 
-        Destroy(rawPhoto);
+        // 6. Fade the white flash out smoothly over 0.2 seconds
+        if (screenFlashUI != null)
+        {
+            while (screenFlashUI.alpha > 0)
+            {
+                screenFlashUI.alpha -= Time.deltaTime * 10f;
+                yield return null; // Wait for the next frame
+            }
+        }
 
     }
 
