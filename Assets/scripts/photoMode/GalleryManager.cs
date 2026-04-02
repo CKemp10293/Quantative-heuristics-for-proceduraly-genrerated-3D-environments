@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine.UI;
 /// <summary>
 /// The class that actually poplautes the gallery with the objects of Images
 /// </summary>
@@ -36,13 +37,14 @@ public class GalleryManager : MonoBehaviour
             if (uiScript != null)
             {
                 uiScript.Initialize(meta);
-
-                // temp 
                 uiScript.LoadImageAsync();
             }
 
             spawnedThumbnails.Add(newThumb);
         }
+
+        Canvas.ForceUpdateCanvases();
+        LayoutRebuilder.ForceRebuildLayoutImmediate(gridContent.GetComponent<RectTransform>());
     }
 
     public void ClearGallery()
@@ -53,8 +55,11 @@ public class GalleryManager : MonoBehaviour
             Destroy(thumb);
         }
         spawnedThumbnails.Clear();
-        
-        // Force Unity to dump unloaded textures from VRAM
+    }
+
+    // Sweeps memory to keep RAM clear
+    public void FlushMemory()
+    {
         Resources.UnloadUnusedAssets(); 
     }
 }

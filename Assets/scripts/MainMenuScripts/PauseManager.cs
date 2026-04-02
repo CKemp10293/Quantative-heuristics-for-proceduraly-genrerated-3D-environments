@@ -110,6 +110,7 @@ public class PauseManager : MonoBehaviour
         
         // Tell GalleryManager to flush RAM
         GalleryManager.Instance.ClearGallery();
+        GalleryManager.Instance.FlushMemory();
     }
 
     public void QuitGame()
