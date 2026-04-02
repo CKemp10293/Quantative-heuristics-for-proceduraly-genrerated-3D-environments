@@ -166,8 +166,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MapGenerator
   drawMode: 2
-  EditorLevelOfDetail: 0
+  editorLevelOfDetail: 0
   autoUpdate: 1
+  useGPUInstancing: 1
   offset: {x: 0, y: 0}
   availablePresets:
   - {fileID: 11400000, guid: fe940d1767efa4844a7f58fcede05669, type: 2}
@@ -177,7 +178,6 @@ MonoBehaviour:
   activePresetIndex: 3
   terrainMaterial: {fileID: 2100000, guid: a8a51e8deadd94aac85fac604b53115d, type: 2}
   oceanObject: {fileID: 1170886098}
-  useGPUInstancing: 1
 --- !u!4 &120531709
 Transform:
   m_ObjectHideFlags: 0
@@ -212,8 +212,8 @@ MonoBehaviour:
     levelOfDetailVisibleThreshold: 400
   - levelOfDetail: 2
     levelOfDetailVisibleThreshold: 500
-  viewer: {fileID: 536658586}
   mapMaterial: {fileID: 2100000, guid: a8a51e8deadd94aac85fac604b53115d, type: 2}
+  viewer: {fileID: 536658586}
 --- !u!1 &130262755
 GameObject:
   m_ObjectHideFlags: 0
@@ -1427,9 +1427,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TriggerColliderBubble
   bubbleRadius: 1
-  TreeDetectorLayer:
+  treeDetectorLayer:
     serializedVersion: 2
     m_Bits: 64
+  maxConcurrentColliders: 128
 --- !u!82 &536658593
 AudioSource:
   m_ObjectHideFlags: 0
@@ -1539,9 +1540,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eec8f0d413a2245d08b1aea26dc369f9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BirdSpawner
-  currentBirdPrefab: {fileID: 4292170788808701894, guid: 75a4deae628b069438e0190f8c454051, type: 3}
+  currentBirdPrefab: {fileID: 4292170788808701894, guid: 67b8ef3255b70da47ba90a32ede878df, type: 3}
   spawnRate: 5
-  timer: 10
 --- !u!114 &536658600
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1556,6 +1556,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerSpawner
   searchRadius: 100
   maxSearchAttempts: 50
+  verticalSpawnOffset: 2
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 4294967295
 --- !u!114 &536658602 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 5420857361349278248, guid: c5efc39a8aaf6e64ea40e9ad573e9b47, type: 3}
@@ -4266,8 +4270,8 @@ Light:
   m_Enabled: 1
   serializedVersion: 12
   m_Type: 1
-  m_Color: {r: 0.5294118, g: 0.8078432, b: 0.9215687, a: 1}
-  m_Intensity: 5
+  m_Color: {r: 0.2783464, g: 0.38213554, b: 0.4245283, a: 1}
+  m_Intensity: 0.5
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -11101,6 +11105,55 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!1 &2065665948
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2065665950}
+  - component: {fileID: 2065665949}
+  m_Layer: 0
+  m_Name: Global Volume
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &2065665949
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2065665948}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 172515602e62fb746b5d573b38a5fe58, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Core.Runtime::UnityEngine.Rendering.Volume
+  m_IsGlobal: 1
+  priority: 0
+  blendDistance: 0
+  weight: 1
+  sharedProfile: {fileID: 11400000, guid: cb4508bded14c473db81683200867601, type: 2}
+--- !u!4 &2065665950
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2065665948}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.0000019, z: 90}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2072382013
 GameObject:
   m_ObjectHideFlags: 0
@@ -11276,3 +11329,4 @@ SceneRoots:
   - {fileID: 167007218}
   - {fileID: 223006536}
   - {fileID: 812580427}
+  - {fileID: 2065665950}

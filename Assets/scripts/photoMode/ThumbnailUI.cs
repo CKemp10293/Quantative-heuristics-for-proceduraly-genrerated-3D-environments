@@ -3,7 +3,9 @@ using UnityEngine.UI;
 using System.IO;
 using System.Threading.Tasks;
 using TMPro;
-
+/// <summary>
+/// A class to actually allow us to see every image we have taken inside a scroll view 
+/// </summary>
 public class ThumbnailUI : MonoBehaviour
 {
     public RawImage photoDisplay; // Use RawImage for Texture2D
@@ -22,22 +24,22 @@ public class ThumbnailUI : MonoBehaviour
     }
 
     // Call this when the ScrollRect detects this prefab has entered the screen
-public async void LoadImageAsync()
-{
-    if (isLoaded || !File.Exists(filePath)) return;
-    isLoaded = true; // Set early to prevent double-calls
+    public async void LoadImageAsync()
+    {
+        if (isLoaded || !File.Exists(filePath)) return;
+        isLoaded = true; // Set early to prevent double-calls
 
-    // Read bytes on a background CPU thread (Zero lag to the game)
-    byte[] fileData = await Task.Run(() => File.ReadAllBytes(filePath));
+        // Read bytes on a background CPU thread (Zero lag to the game)
+        byte[] fileData = await Task.Run(() => File.ReadAllBytes(filePath));
 
-    // We are back on the main thread. Apply the texture.
-    // (Unity requires Texture creation to happen on the main thread)
-    loadedTexture = new Texture2D(2, 2, TextureFormat.RGB24, false);
-    loadedTexture.LoadImage(fileData);
+        // We are back on the main thread. Apply the texture.
+        // (Unity requires Texture creation to happen on the main thread)
+        loadedTexture = new Texture2D(2, 2, TextureFormat.RGB24, false);
+        loadedTexture.LoadImage(fileData);
     
-    photoDisplay.texture = loadedTexture;
-    photoDisplay.color = Color.white;
-}
+        photoDisplay.texture = loadedTexture;
+        photoDisplay.color = Color.white;
+    }
 
     // Call this when the prefab scrolls off-screen or the gallery closes
     public void UnloadImage()

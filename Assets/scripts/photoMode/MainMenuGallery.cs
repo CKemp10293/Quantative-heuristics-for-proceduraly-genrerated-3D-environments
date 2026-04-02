@@ -1,7 +1,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq; 
-
+/// <summary>
+/// Loads highscores on the main menu
+/// </summary>
 public class MainMenuGallery : MonoBehaviour
 {
     [Header("High Score UI")]

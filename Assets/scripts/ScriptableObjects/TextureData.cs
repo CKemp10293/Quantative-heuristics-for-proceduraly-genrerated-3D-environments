@@ -1,5 +1,8 @@
 using UnityEngine;
 
+/// <summary>
+/// Represents a single biome/terrain texture layer and its blending properties.
+/// </summary>
 [System.Serializable]
 public class TextureLayer
 {
@@ -11,10 +14,15 @@ public class TextureLayer
   [Header("Height placement")]
   [Range(0,1)]
   public float startHeight;
+
   [Range(0,1)]
   public float blendStrenght;
 }
 
+/// <summary>
+/// ScriptableObject containing configuration for all texture layers applied to the procedural terrain.
+/// Extracts and sends this data to the terrain shader.
+/// </summary>
 [CreateAssetMenu(menuName ="Texture data")]
 public class TextureData : ScriptableObject
 {
@@ -23,6 +31,9 @@ public class TextureData : ScriptableObject
     float savedMinHeight;
     float savedMaxHeight;
 
+    /// <summary>
+    /// Sends the global minimum and maximum height thresholds to the shader.
+    /// </summary>
     public void UpdateMeshHeights(Material material,float minHeight,float maxHeight)
     {
         savedMaxHeight = maxHeight;
@@ -32,6 +43,9 @@ public class TextureData : ScriptableObject
         Shader.SetGlobalFloat("maxHeight", maxHeight);
     }
 
+    /// <summary>
+    /// Parses the layer configurations into flat arrays and uploads them to the GPU.
+    /// </summary>
     public void ApplyToMat(Material material)
     {
         int layerCount = layers.Length;
@@ -40,7 +54,7 @@ public class TextureData : ScriptableObject
         float[] baseBlends = new float[layerCount];
         float[] baseTextureScales = new float[layerCount];
 
-        // 2. Loop through our config and extract the data
+        // Loop through our config and extract the data
         for (int i = 0; i < layerCount; i++)
         {
             baseColours[i] = layers[i].tint;
@@ -49,7 +63,7 @@ public class TextureData : ScriptableObject
             baseTextureScales[i] = layers[i].textureScale;
         }
 
-        // 3. Send the flat arrays to the Material
+        // Send the flat arrays to the global shader
         Shader.SetGlobalFloat("layerCount", layerCount);
         Shader.SetGlobalVectorArray("baseColours", baseColours);
         Shader.SetGlobalFloatArray("baseStartHeights", baseStartHeights);
@@ -62,24 +76,24 @@ public class TextureData : ScriptableObject
         UpdateMeshHeights(material,savedMinHeight,savedMaxHeight);
     }
 
+    /// <summary>
+    /// Packs individual Texture2D objects into a single Texture2DArray for the shader.
+    /// </summary>
     Texture2DArray GenerateTextureArray(TextureLayer[] layers)
     {
-        Texture2D[] textures = new Texture2D[layers.Length];
+        if (layers == null || layers.Length == 0 || layers[0].texture == null) return null;
+
+        int tSize = layers[0].texture.width;
+        TextureFormat format = TextureFormat.RGBA32;
+
+        Texture2DArray texture2DArray = new Texture2DArray(tSize, tSize, layers.Length, format, true);
 
         for (int i = 0; i < layers.Length; i++)
         {
-            textures[i] = layers[i].texture;
-        }
-
-        int tSize = textures[0].width;
-
-        TextureFormat format = TextureFormat.RGBA32;
-
-        Texture2DArray texture2DArray = new Texture2DArray(tSize,tSize,textures.Length,format,true);
-
-        for (int i = 0; i < textures.Length; i++)
-        {
-            texture2DArray.SetPixels(textures[i].GetPixels(),i);
+            if (layers[i].texture != null)
+            {
+                texture2DArray.SetPixels(layers[i].texture.GetPixels(), i);
+            }
         }
 
         texture2DArray.Apply();

@@ -1,6 +1,8 @@
 using UnityEngine;
 using System.Collections.Generic;
-
+/// <summary>
+/// The class that actually poplautes the gallery with the objects of Images
+/// </summary>
 public class GalleryManager : MonoBehaviour
 {
     public static GalleryManager Instance; // Simple Singleton for easy access
@@ -18,13 +20,13 @@ public class GalleryManager : MonoBehaviour
 
     public void PopulateGallery()
     {
-        // 1. Fetch the lightweight data from the hard drive
+        // Fetch the lightweight data from the hard drive
         List<PhotoMetadata> allPhotos = PhotoDatabaseManager.LoadAllPhotoData();
 
-        // 2. Clear any old thumbnails just in case
+        // Clear any old thumbnails just in case
         ClearGallery();
 
-        // 3. Spawn a UI element for every photo
+        // Spawn a UI element for every photo
         foreach (PhotoMetadata meta in allPhotos)
         {
             GameObject newThumb = Instantiate(thumbnailPrefab, gridContent);

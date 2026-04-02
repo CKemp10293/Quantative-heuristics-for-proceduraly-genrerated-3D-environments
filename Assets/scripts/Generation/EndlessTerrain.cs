@@ -1,46 +1,53 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-
+/// <summary>
+/// Manages the infinite generation, level of detail , and rendering of terrain chunks
+/// around a specified viewer.
+/// </summary>
 public class EndlessTerrain : MonoBehaviour
 {
     const float scale = 1f;
-    public levelOfDetailInfo[] levelsOfDetail;
-    public static float maxViewDistance = 600;
+    float thresholdForViewerMoveChunkUpdate = 15f;
+    float sqrthresholdForViewerMoveChunkUpdate;
 
-    public static float maxViewDistanceSquared;
-    public Transform viewer;
-    public static Vector2 viewerPosition;
+    public levelOfDetailInfo[] levelsOfDetail;
     public Material mapMaterial;
+    public Transform viewer;
+
+    public static float maxViewDistance = 600;
+    public static float maxViewDistanceSquared;
+    public static Vector2 viewerPosition;
 
     static MapGenerator mapGenerator;
 
-    float thresholdForViewerMoveChunkUpdate = 15f;
-    float sqrthresholdForViewerMoveChunkUpdate;
+
     Vector2 viewerOldPosition;
     int chunkSize;
     int numberOfChunksVisibleInViewDistance;
+
     Dictionary<Vector2,TerrainChunk> terrianChunkDictionary = new Dictionary<Vector2,TerrainChunk>();
     List<TerrainChunk> terrainChunksVisibleLastUpdates = new List<TerrainChunk>();
 
     void Start()
     {
         mapGenerator = FindFirstObjectByType<MapGenerator>();
+
         chunkSize = MapGenerator.mapChunkSize - 1;
         numberOfChunksVisibleInViewDistance = Mathf.RoundToInt(maxViewDistance / chunkSize);
-
         maxViewDistance = levelsOfDetail[^1].levelOfDetailVisibleThreshold;
-
         maxViewDistanceSquared = maxViewDistance * maxViewDistance;
         sqrthresholdForViewerMoveChunkUpdate = thresholdForViewerMoveChunkUpdate * thresholdForViewerMoveChunkUpdate;
 
-        viewerPosition = new Vector2 (viewer.position.x,viewer.position.z);
+        viewerPosition = new Vector2 (viewer.position.x,viewer.position.z) / scale;
         updateVisibleChunks();
     }
 
     void Update()
     {
         viewerPosition = new Vector2 (viewer.position.x,viewer.position.z) / scale;
+
+        // Only update chunk if player moves past the threshold. 
         if((viewerOldPosition - viewerPosition).sqrMagnitude > sqrthresholdForViewerMoveChunkUpdate)
         {
             viewerOldPosition = viewerPosition;
@@ -48,8 +55,12 @@ public class EndlessTerrain : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Scans the grid around the viewer, instantiating new chunks or updating the LOD of existing ones.
+    /// </summary>
     void updateVisibleChunks()
     {
+        // Update chunks that were visible last frame and hide them if they moved out of range
         for (int i = terrainChunksVisibleLastUpdates.Count - 1; i >= 0; i--)
         {
             terrainChunksVisibleLastUpdates[i].UpdateChunk();
@@ -58,15 +69,18 @@ public class EndlessTerrain : MonoBehaviour
                 terrainChunksVisibleLastUpdates.RemoveAt(i);
             }
         }
+
         int currentChunkCoordX = Mathf.RoundToInt(viewerPosition.x / chunkSize);
         int currentChunkCoordY = Mathf.RoundToInt(viewerPosition.y / chunkSize);
 
+        // Loop through all grid coordinates within the view distance
         for(int yOffset = -numberOfChunksVisibleInViewDistance;yOffset <= numberOfChunksVisibleInViewDistance;yOffset++)
         {
             for(int xOffset =  -numberOfChunksVisibleInViewDistance;xOffset <= numberOfChunksVisibleInViewDistance; xOffset++)
             {
                 Vector2 viewedChunkCoords = new Vector2(currentChunkCoordX + xOffset,currentChunkCoordY + yOffset);
-                if (terrianChunkDictionary.ContainsKey(viewedChunkCoords))
+
+                if (terrianChunkDictionary.TryGetValue(viewedChunkCoords, out TerrainChunk existingChunk))
                 {
                     terrianChunkDictionary[viewedChunkCoords].UpdateChunk();
                     if (terrianChunkDictionary[viewedChunkCoords].isVisible())
@@ -78,6 +92,7 @@ public class EndlessTerrain : MonoBehaviour
                     }
                 } else
                 {
+                    // chunk doesnt exist yet,  create a new one 
                     TerrainChunk newChunk = new TerrainChunk(viewedChunkCoords,chunkSize,transform,mapMaterial,levelsOfDetail);
                     terrianChunkDictionary.Add(viewedChunkCoords,newChunk);
 
@@ -91,6 +106,9 @@ public class EndlessTerrain : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Represents an individual square piece of the world, handling its own mesh, LODs, and tree population.
+    /// </summary>
     public class TerrainChunk
     {
         GameObject meshObject;
@@ -109,6 +127,7 @@ public class EndlessTerrain : MonoBehaviour
         LODMesh[] lODMeshes;
         int previousLODIndex = -1; 
 
+        // Tree and collision data
         public TerrainChunk(Vector2 coord,int size,Transform parent,Material material,levelOfDetailInfo[] levelsOfDetail)
         {
             this.levelsOfDetail = levelsOfDetail;
@@ -116,6 +135,7 @@ public class EndlessTerrain : MonoBehaviour
             Vector3 postionV3 = new Vector3(postion.x,0,postion.y);
             bounds = new Bounds(postionV3, Vector3.one * size);
 
+            // init unity components
             meshObject = new GameObject("Terrain Chunk");
             meshRenderer = meshObject.AddComponent<MeshRenderer>();
             meshFilter = meshObject.AddComponent<MeshFilter>();
@@ -126,12 +146,14 @@ public class EndlessTerrain : MonoBehaviour
             meshObject.transform.parent = parent;
             meshObject.transform.localScale = Vector3.one * scale;
 
+            // Initialize Tree Trigger Container
             treeColliderTrigger = new GameObject("Tree Trigger");
             treeColliderTrigger.transform.parent= meshObject.transform;
             treeColliderTrigger.transform.localPosition = Vector3.zero;
 
             setVisible(false);
 
+            // Setup LOD Meshes callbacks
             lODMeshes = new LODMesh[levelsOfDetail.Length];
             for (int i = 0; i < levelsOfDetail.Length;  i++)
             {
@@ -144,13 +166,12 @@ public class EndlessTerrain : MonoBehaviour
         {
             this.mapData = mapData;
             mapDataRecieved = true;
-
-            //Texture2D texture = TextureGenerator.TextureFromColourMap(mapData.colourMap,MapGenerator.mapChunkSize,MapGenerator.mapChunkSize);
-            //meshRenderer.material.mainTexture = texture;
-
             UpdateChunk();
         }
 
+        /// <summary>
+        /// Calculates distance to player and assigns the appropriate LOD mesh, or hides the chunk entirely.
+        /// </summary>
         public void UpdateChunk()
         {
             if (mapDataRecieved)
@@ -169,7 +190,7 @@ public class EndlessTerrain : MonoBehaviour
                         }
                         else
                         {
-                            break;
+                            break; // Viewer is within the threshold for this LOD, no need to check further
                         }
                     }
                     if (LODindex != previousLODIndex)
@@ -201,6 +222,9 @@ public class EndlessTerrain : MonoBehaviour
             }
         }
 
+        /// <summary>
+        /// Manages the density and collision of trees based on the chunk's active LOD.
+        /// </summary>
         public void updateTrees(int LODindex)
         {
             // Saftey check
@@ -209,6 +233,7 @@ public class EndlessTerrain : MonoBehaviour
             TreePreset preset = mapGenerator.availablePresets[mapData.presetIndex].treePreset;
             if(preset == null || preset.prefabConfigs == null) return ;
 
+            // Toggle high-fidelity physics only on LOD 0
             if(LODindex == 0)
             {
                 treeColliderTrigger.SetActive(true);
@@ -224,7 +249,7 @@ public class EndlessTerrain : MonoBehaviour
             }
 
             Matrix4x4 globalScaleMatrix = Matrix4x4.Scale(Vector3.one * scale);
-            int skipTreeDrawFactor = (int)Mathf.Pow(2,LODindex);
+            int skipTreeDrawFactor = 1 << LODindex;
 
             //Loop through all tree types in map data
             for (int i = 0; i < mapData.treeMatrices.Length; i++)
@@ -254,6 +279,9 @@ public class EndlessTerrain : MonoBehaviour
             }
         }
 
+        /// <summary>
+        /// Instantiates physical colliders for trees when the player is extremely close (LOD 0).
+        /// </summary>
         void GenerateTreeColliders(TreePreset preset)
         {
             Matrix4x4 globalScaleMatrix = Matrix4x4.Scale(Vector3.one * scale);
@@ -300,6 +328,9 @@ public class EndlessTerrain : MonoBehaviour
 
     }
 
+    /// <summary>
+    /// Handles the asynchronous request and storage of mesh data for a specific Level of Detail.
+    /// </summary>
     class LODMesh
     {
         public Mesh mesh;

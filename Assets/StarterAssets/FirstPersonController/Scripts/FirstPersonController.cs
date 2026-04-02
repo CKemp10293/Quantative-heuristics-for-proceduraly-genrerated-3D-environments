@@ -78,7 +78,6 @@ namespace StarterAssets
     	[HideInInspector] public AudioClip[] sandFootsteps;
 
     	[Header("Surface Audio Clips")]
-    	// Arrays allow us to add 3 or 4 variations of a sound so it doesn't sound like a machine gun
     	public AudioClip[] swimStrokes;
 
 		[Header("VFX Settings")]
@@ -393,7 +392,7 @@ namespace StarterAssets
             if (isSwimming)
             {
                 PlayRandomClip(swimStrokes);
-                stepTimer = baseStepRate * 2f;
+                stepTimer = baseStepRate * 4f;
             }
             else if (controller.isGrounded)
             {

@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: islandPreset
+  m_EditorClassIdentifier: Assembly-CSharp::TreePreset
+  prefabConfigs:
+  - name: TriplePalm
+    prefab: {fileID: 8530321539287509401, guid: fd208a627f4440332909ffe1d2a6228b, type: 3}
+    collisionPrefab: {fileID: 968833272184807230, guid: d16ec87812c0947de8bbcf4366df77bc, type: 3}
+    spawnOnBiomeIndex: 3
+    density: 0.1
+    minScale: 0.5
+    maxScale: 0.75
+    heightOffset: 0
+  - name: palm
+    prefab: {fileID: 6607498677192992508, guid: 16fb34314974e0f4c9e7e5a3bd93d6fb, type: 3}
+    collisionPrefab: {fileID: 968833272184807230, guid: d16ec87812c0947de8bbcf4366df77bc, type: 3}
+    spawnOnBiomeIndex: 4
+    density: 0.1
+    minScale: 0.5
+    maxScale: 0.75
+    heightOffset: 0

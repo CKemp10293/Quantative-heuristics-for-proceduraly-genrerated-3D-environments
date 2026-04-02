@@ -1,5 +1,7 @@
 using UnityEngine;
-
+/// <summary>
+/// Class for downsampling so we can actually work on the images
+/// </summary>
 public static class ImageUtility
 {
     public static Texture2D DownsampleTexture(Texture2D source,int targetWidth, int targetHeight)

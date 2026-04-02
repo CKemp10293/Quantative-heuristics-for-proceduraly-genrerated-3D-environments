@@ -3,114 +3,46 @@ using System.Collections.Generic;
 using System;
 using System.Threading;
 using Unity.Mathematics;
+
+/// <summary>
+/// Handles the procedural generation, threading, and environment setup for terrain chunks.
+/// </summary>
 public class MapGenerator : MonoBehaviour
 {
     public enum DrawMode {NOISEMAP,COLOURMAP,MESH}
     public DrawMode drawMode;
-    public const int mapChunkSize= 239; // unity imposes a max number of vertcies as 255^2,
-                                        // we need out width have have a nice ammount of factors
-                                        // for the chunking to work. 240 has factors: 2,4,6,8,10,12
 
-    [Range(0,6)] // Clamp variable. mulitply by two to get the 12.
-    public int EditorLevelOfDetail;
+    // Unity imposes a max number of vertices as 255^2 per mesh.
+    // 240 has factors: 2, 4, 6, 8, 10, 12, which makes LOD chunking divide evenly.
+    public const int mapChunkSize= 239; 
+
+    [Range(0,6)]
+    public int editorLevelOfDetail;
     public bool autoUpdate;
+    public bool useGPUInstancing = true;
+
     public Vector2 offset;
 
     [Header("Preset Configuration")]
-    // The list of all possible presets.
     public List<MapConfig> availablePresets;
-    
-    // The currently selected index 
     [HideInInspector] public int activePresetIndex = 0;
-    private BiomePreset biomePreset;
-    private NoisePreset noisePreset;
-    private TreePreset treePreset;
+
     public Material terrainMaterial;
     public GameObject oceanObject;
 
-    public bool useGPUInstancing = true;
+    // Internal states
+    private BiomePreset biomePreset;
+    private NoisePreset noisePreset;
+    private TreePreset treePreset;
+    private StarterAssets.FirstPersonController cachedPlayer;
+
     // queue for map info (colours and look ect.)
     Queue<MapThreadInfo<MapData>> mapDataThreadInfoQueue = new Queue<MapThreadInfo<MapData>>();
     // queue for mesh info (height and curves ect.)
-    Queue<MapThreadInfo<MeshData>> meshDataTheadInfoQueue = new Queue<MapThreadInfo<MeshData>>();
-
-    public void DrawMapInEditor()
-    {
-
-        UpdateEnvSetting();
-        MapData mapData = GenerateMap(Vector2.zero);
-        MapDisplay display = FindFirstObjectByType<MapDisplay>();
-        if (drawMode == DrawMode.NOISEMAP)
-        {
-            display.DrawTexture(TextureGenerator.TextureFromHeightMap(mapData.heightMap));
-        } else if (drawMode == DrawMode.COLOURMAP)
-        {
-            display.DrawTexture(TextureGenerator.TextureFromColourMap(mapData.colourMap,mapChunkSize,mapChunkSize));
-        } else if (drawMode == DrawMode.MESH)
-        {
-            display.DrawMesh(MeshGenerator.GenerateTerrainMesh(mapData.heightMap,noisePreset.settings[0].meshHeightMultiplier
-            ,noisePreset.settings[0].meshHeightCurve,EditorLevelOfDetail),TextureGenerator.TextureFromColourMap(mapData.colourMap,mapChunkSize,mapChunkSize));
-        }
-    }
-
-    public void RequestMapData(Vector2 center,Action<MapData> callback)
-    {
-        ThreadStart threadStart = delegate
-        {
-            MapDataThread(center,callback);
-        };
-        new Thread (threadStart).Start();
-    }
-
-    void MapDataThread(Vector2 center,Action<MapData> callback)
-    {
-        MapData mapData = GenerateMap(center);
-        // prevent race conditions by locking queue.
-        lock (mapDataThreadInfoQueue)
-        {
-            mapDataThreadInfoQueue.Enqueue(new MapThreadInfo<MapData>(callback,mapData));
-
-        }
-    }
-
-    public void RequestMeshData(MapData mapData,int LOD,Action<MeshData> callback)
-    {
-        ThreadStart threadStart = delegate
-        {
-            MeshDataThread(mapData,LOD,callback);
-        };
-        new Thread(threadStart).Start();
-    }
-
-    void MeshDataThread(MapData mapData,int LOD, Action<MeshData> callback)
-    {
-        MapConfig config = availablePresets[mapData.presetIndex];
-        NoisePreset noisePreset = config.noisePreset;
-
-        MeshData meshData = MeshGenerator.GenerateTerrainMesh(mapData.heightMap,
-        noisePreset.settings[0].meshHeightMultiplier,
-        noisePreset.settings[0].meshHeightCurve,LOD);
-        lock (meshDataTheadInfoQueue)
-        {
-            meshDataTheadInfoQueue.Enqueue(new MapThreadInfo<MeshData>(callback,meshData));
-        }
-    }
-
-    void Update()
-    {
-        while(mapDataThreadInfoQueue.Count > 0)
-        {
-            MapThreadInfo<MapData> threadInfoMap = mapDataThreadInfoQueue.Dequeue();
-            threadInfoMap.callback(threadInfoMap.parameter);
-        }
-        while(meshDataTheadInfoQueue.Count > 0)
-        {
-            MapThreadInfo<MeshData> threadInfoMesh = meshDataTheadInfoQueue.Dequeue();
-            threadInfoMesh.callback(threadInfoMesh.parameter);
-        }    
-    }
+    Queue<MapThreadInfo<MeshData>> meshDataThreadInfoQueue = new Queue<MapThreadInfo<MeshData>>();
     void Awake()
     {
+        // Bind the selected biome from the main menu, if it exists
         if (mainMenuController.selectedBiome != null && availablePresets != null)
         {
             for (int i = 0; i < availablePresets.Count; i++)
@@ -124,6 +56,7 @@ public class MapGenerator : MonoBehaviour
         }
 
         UpdateEnvSetting();
+
         // 1. Grab the active config preset FIRST so we can read its data
         if (availablePresets != null && availablePresets.Count > 0)
         {
@@ -133,17 +66,121 @@ public class MapGenerator : MonoBehaviour
 
     }
 
+    void Update()
+    {
+        // Process background thread callbacks on the Main Unity Thread
+        while(mapDataThreadInfoQueue.Count > 0)
+        {
+            MapThreadInfo<MapData> threadInfoMap = mapDataThreadInfoQueue.Dequeue();
+            threadInfoMap.callback(threadInfoMap.parameter);
+        }
+        while(meshDataThreadInfoQueue.Count > 0)
+        {
+            MapThreadInfo<MeshData> threadInfoMesh = meshDataThreadInfoQueue.Dequeue();
+            threadInfoMesh.callback(threadInfoMesh.parameter);
+        }    
+    }
+
+    /// <summary>
+    /// Generates and renders a map immediately. Used primarily for Editor visualization.
+    /// </summary>
+    public void DrawMapInEditor()
+    {
+
+        UpdateEnvSetting();
+        MapData mapData = GenerateMap(Vector2.zero);
+        MapDisplay display = FindFirstObjectByType<MapDisplay>();
+
+        // Cache noise settings to avoid repetitive deep array access
+        var activeNoiseSettings = noisePreset.settings[0];
+
+        switch (drawMode)
+        {
+            case DrawMode.NOISEMAP:
+                display.DrawTexture(TextureGenerator.TextureFromHeightMap(mapData.heightMap));
+                break;
+            case DrawMode.COLOURMAP:
+                display.DrawTexture(TextureGenerator.TextureFromColourMap(mapData.colourMap, mapChunkSize, mapChunkSize));
+                break;
+            case DrawMode.MESH:
+                MeshData meshData = MeshGenerator.GenerateTerrainMesh(
+                    mapData.heightMap,
+                    activeNoiseSettings.meshHeightMultiplier,
+                    activeNoiseSettings.meshHeightCurve,
+                    editorLevelOfDetail
+                );
+                Texture2D texture = TextureGenerator.TextureFromColourMap(mapData.colourMap, mapChunkSize, mapChunkSize);
+                display.DrawMesh(meshData, texture);
+                break;
+        }
+    }
+    /// <summary>
+    /// Asynchronously requests raw mathematical map data (heights, colours, tree positions).
+    /// </summary>
+    public void RequestMapData(Vector2 center,Action<MapData> callback)
+    {
+        ThreadPool.QueueUserWorkItem(_ => MapDataThread(center, callback));
+    }
+    void MapDataThread(Vector2 center,Action<MapData> callback)
+    {
+        MapData mapData = GenerateMap(center);
+        lock (mapDataThreadInfoQueue)
+        {
+            mapDataThreadInfoQueue.Enqueue(new MapThreadInfo<MapData>(callback,mapData));
+
+        }
+    }
+
+    /// <summary>
+    /// Asynchronously requests the geometric mesh data constructed from the generated MapData.
+    /// </summary>
+    public void RequestMeshData(MapData mapData,int LOD,Action<MeshData> callback)
+    {
+        ThreadStart threadStart = delegate
+        {
+            ThreadPool.QueueUserWorkItem(_ => MeshDataThread(mapData, LOD, callback));
+        };
+        new Thread(threadStart).Start();
+    }
+    void MeshDataThread(MapData mapData,int LOD, Action<MeshData> callback)
+    {
+        MapConfig config = availablePresets[mapData.presetIndex];
+        var activeNoiseSettings = config.noisePreset.settings[0];
+
+        MeshData meshData = MeshGenerator.GenerateTerrainMesh(mapData.heightMap,
+        activeNoiseSettings.meshHeightMultiplier,
+        activeNoiseSettings.meshHeightCurve,LOD);
+        lock (meshDataThreadInfoQueue)
+        {
+            meshDataThreadInfoQueue.Enqueue(new MapThreadInfo<MeshData>(callback,meshData));
+        }
+    }
+
+    
+    
+    /// <summary>
+    /// The core generation algorithm. Creates heightmaps, assigns biomes, and calculates tree matrices.
+    /// </summary>
     MapData GenerateMap(Vector2 centre)
     {
         activePresetIndex = Mathf.Clamp(activePresetIndex, 0, availablePresets.Count - 1);
-        // Pull the sub-files from the Master Config
         MapConfig activeConfig = availablePresets[activePresetIndex];
+
         noisePreset = activeConfig.noisePreset;
         biomePreset = activeConfig.biomePreset;
         treePreset = activeConfig.treePreset;
+        var activeNoiseSettings = noisePreset.settings[0];
 
-        float[,] noiseMap = Noise.GenerateNoiseMap(mapChunkSize + 2, mapChunkSize + 2,noisePreset.settings[0].noiseScale, noisePreset.settings[0].octaves, noisePreset.settings[0].persistance,
-         noisePreset.settings[0].lacunarity,noisePreset.settings[0].seed, centre + offset,noisePreset.settings[0].normalisationMode );
+        float[,] noiseMap = Noise.GenerateNoiseMap(
+        mapChunkSize + 2,
+        mapChunkSize + 2,
+        activeNoiseSettings.noiseScale,
+        activeNoiseSettings.octaves,
+        activeNoiseSettings.persistance,
+        activeNoiseSettings.lacunarity,
+        activeNoiseSettings.seed,
+        centre + offset,
+        activeNoiseSettings.normalisationMode);
 
         Color[] colourMap = new Color[mapChunkSize*mapChunkSize];
         
@@ -155,7 +192,7 @@ public class MapGenerator : MonoBehaviour
             prefabMatrices[i] = new List<Matrix4x4>();
         }
         
-        // So the trees are the same if the seed is the same
+        // Use a seeded RNG to guarantee deterministic tree placement per chunk
         int chunkSeed = centre.GetHashCode() + noisePreset.settings[0].seed;
         System.Random treeRNG = new System.Random(chunkSeed);
 
@@ -170,24 +207,26 @@ public class MapGenerator : MonoBehaviour
             for (int x = 0; x < mapChunkSize; x++)
             {
                 float currentHeight = noiseMap[x + 1,y + 1];
-                
-                int currentBiomeIndex = -1; // Track which biome we are in
+                int currentBiomeIndex = -1;
+
+                // Biome evaluation
                 if ( !object.ReferenceEquals(biomePreset,null) && biomePreset.regions != null)
                 {
                     for (int i = 0; i < biomePreset.regions.Length; i++)
-                {
-                    if (currentHeight >= biomePreset.regions[i].height)
                     {
-                        colourMap[y * mapChunkSize + x] = biomePreset.regions[i].colour;
-                        currentBiomeIndex = i; // Save index
-                    }
-                    else
-                    {
-                        break;
+                        if (currentHeight >= biomePreset.regions[i].height)
+                        {
+                            colourMap[y * mapChunkSize + x] = biomePreset.regions[i].colour;
+                            currentBiomeIndex = i; // Save index
+                        }
+                        else
+                        {
+                            break; // Because regions are typically ordered by height
+                        }
                     }
                 }
-                }
-                // Adding tree logic
+
+                // Tree generation logic
                 if(!object.ReferenceEquals(treePreset,null))
                 {
                     for (int i = 0; i < prefabTypeCount; i++)
@@ -204,6 +243,8 @@ public class MapGenerator : MonoBehaviour
                             float localy = heightCurve.Evaluate(currentHeight) * heightMultiplier;
 
                             Vector3 position = new Vector3(centre.x + localx,localy + config.heightOffset,centre.y + localz);
+
+                            // Use UnityEngine.Quaternion for Matrix4x4 compatibility
                             quaternion rotation = quaternion.Euler(0,(float)treeRNG.NextDouble() * 360f,0);
                             float scaleValue = Mathf.Lerp(config.minScale,config.maxScale,(float)treeRNG.NextDouble());
                             Vector3 scale = Vector3.one * scaleValue;
@@ -211,7 +252,7 @@ public class MapGenerator : MonoBehaviour
                             if(prefabMatrices[i] == null ) prefabMatrices[i] = new List<Matrix4x4>();
 
                             prefabMatrices[i].Add(Matrix4x4.TRS(position,rotation,scale));
-                            break;
+                            break; // Only spawn one tree type per coordinate
                         }
                     }
                 }
@@ -221,6 +262,9 @@ public class MapGenerator : MonoBehaviour
         return new MapData(noiseMap,colourMap,prefabMatrices,activePresetIndex);
     }
 
+    /// <summary>
+    /// Applies the active biome's environmental settings (audio, particles, materials) to the scene and player.
+    /// </summary>
     public void UpdateEnvSetting()
     {
         if (availablePresets == null || availablePresets.Count == 0)
@@ -236,79 +280,71 @@ public class MapGenerator : MonoBehaviour
             oceanObject.SetActive(activeConfig.enableOcean);
         }
 
-        StarterAssets.FirstPersonController player = FindFirstObjectByType<StarterAssets.FirstPersonController>();
-        if (player != null)
+        // OPTIMIZATION: Cache the player reference to avoid O(N) lookup overhead.
+        if (cachedPlayer == null)
         {
-            player.oceanEnabled = activeConfig.enableOcean;
-            player.sandMaxHeight = activeConfig.sandMaxHeight;
-            player.grassMaxHeight = activeConfig.grassMaxHeight;
+            cachedPlayer = FindFirstObjectByType<StarterAssets.FirstPersonController>();
+        }
 
-            // Overwrite the player's audio arrays with this specific biome's audio
-            player.snowFootsteps = activeConfig.biomeSnowFootsteps;
-            player.grassFootsteps = activeConfig.biomeGrassFootsteps;
-            player.sandFootsteps = activeConfig.biomeSandFootsteps;
+        if (cachedPlayer != null)
+        {
+            cachedPlayer.oceanEnabled = activeConfig.enableOcean;
+            cachedPlayer.sandMaxHeight = activeConfig.sandMaxHeight;
+            cachedPlayer.grassMaxHeight = activeConfig.grassMaxHeight;
+
+            cachedPlayer.snowFootsteps = activeConfig.biomeSnowFootsteps;
+            cachedPlayer.grassFootsteps = activeConfig.biomeGrassFootsteps;
+            cachedPlayer.sandFootsteps = activeConfig.biomeSandFootsteps;
+
+            if (cachedPlayer.ambientAudioSource != null && activeConfig.mapAudio != null)
+            {
+                if (cachedPlayer.ambientAudioSource.clip != activeConfig.mapAudio)
+                {
+                    cachedPlayer.ambientAudioSource.clip = activeConfig.mapAudio;
+                    cachedPlayer.ambientAudioSource.Play();
+                }
+            }
+
+            if (cachedPlayer.windParticleSystem != null)
+            {
+                if (activeConfig.enableWind)
+                {
+                    if (!cachedPlayer.windParticleSystem.isPlaying) cachedPlayer.windParticleSystem.Play();
+
+                    var mainModule = cachedPlayer.windParticleSystem.main;
+                    var emissionModule = cachedPlayer.windParticleSystem.emission;
+                    var velocityModule = cachedPlayer.windParticleSystem.velocityOverLifetime;
+
+                    mainModule.startSize = activeConfig.particleWindSize;
+                    mainModule.startColor = activeConfig.windColor;
+                    emissionModule.rateOverTime = activeConfig.windThickness;
+                    velocityModule.speedModifier = activeConfig.windSpeedMultiplier;
+                }
+                else
+                {
+                    cachedPlayer.windParticleSystem.Stop();
+                    cachedPlayer.windParticleSystem.Clear();
+                }
+            }
+
+            if (cachedPlayer.TryGetComponent(out BirdSpawner birdSpawner))
+            {
+                birdSpawner.currentBirdPrefab = activeConfig.birdPrefab;
+                birdSpawner.spawnRate = activeConfig.birdSpawnRate;
+            }
         }
 
         if (activeConfig.textureData != null && terrainMaterial != null && activeConfig.noisePreset != null)
         {
-            // Send the arrays to the GPU
             activeConfig.textureData.ApplyToMat(terrainMaterial);
-
-            // Send the min/max heights to the GPU so the shader blends accurately
             float maxHeight = activeConfig.noisePreset.settings[0].meshHeightMultiplier;
-            float minHeight = 0f; 
-            activeConfig.textureData.UpdateMeshHeights(terrainMaterial, minHeight, maxHeight);
-        }
-
-        if (player != null && player.ambientAudioSource != null && activeConfig.mapAudio != null)
-        {
-            // Only swap and restart the audio if it's actually a different biome track.
-            if (player.ambientAudioSource.clip != activeConfig.mapAudio)
-            {
-                player.ambientAudioSource.clip = activeConfig.mapAudio;
-                player.ambientAudioSource.Play();
-            }
-        }
-
-        if (player != null && player.windParticleSystem != null)
-        {
-            if (activeConfig.enableWind)
-            {
-                // Turn it on if it was off
-                if (!player.windParticleSystem.isPlaying) player.windParticleSystem.Play();
-
-                
-
-                // Inject the settings into the Particle System modules
-                var mainModule = player.windParticleSystem.main;
-                var emissionModule = player.windParticleSystem.emission;
-                var velocityModule = player.windParticleSystem.velocityOverLifetime;
-
-                mainModule.startSize = activeConfig.particleWindSize;
-
-                mainModule.startColor = activeConfig.windColor;
-                emissionModule.rateOverTime = activeConfig.windThickness;
-                
-                // Multiply the baseline X and Z velocity we set in the editor
-                velocityModule.speedModifier = activeConfig.windSpeedMultiplier;
-            }
-            else
-            {
-                // If this biome shouldn't have wind (like an underwater or indoor scene), turn it off
-                player.windParticleSystem.Stop();
-                player.windParticleSystem.Clear();
-            }
-        }
-
-        BirdSpawner birdSpawner = player.GetComponent<BirdSpawner>();
-        if (birdSpawner != null)
-        {
-            birdSpawner.currentBirdPrefab = activeConfig.birdPrefab;
-            birdSpawner.spawnRate = activeConfig.birdSpawnRate;
+            activeConfig.textureData.UpdateMeshHeights(terrainMaterial, 0f, maxHeight);
         }
     }
 
-    // Generic struct to hold map and mesh information for threading.
+    /// <summary>
+    /// Generic struct to securely pass map and mesh information between threads.
+    /// </summary>
     struct MapThreadInfo<T>
     {
         public readonly Action<T> callback;
@@ -322,6 +358,9 @@ public class MapGenerator : MonoBehaviour
     }
 }
 
+/// <summary>
+/// Immutable container holding the generated mathematical data for a terrain chunk.
+/// </summary>
 public struct MapData
 {
     public readonly float[,] heightMap;

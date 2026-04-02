@@ -39,6 +39,9 @@ ExportedObj/
 # Builds
 *.apk
 *.unitypackage
+*.app/
+*.exe/
+*.apk/
 
 # OS Generated
 .DS_Store
