@@ -41,6 +41,22 @@ MonoBehaviour:
     prefab: {fileID: 114594, guid: e0bcb36554be1124b8a89d63037350be, type: 3}
     collisionPrefab: {fileID: 968833272184807230, guid: d16ec87812c0947de8bbcf4366df77bc, type: 3}
     spawnOnBiomeIndex: 0
+    density: 0.001
+    minScale: 1
+    maxScale: 1
+    heightOffset: 0
+  - name: Flower_1
+    prefab: {fileID: 105602, guid: 8f91512376d75e54a9b57ea29926599d, type: 3}
+    collisionPrefab: {fileID: 0}
+    spawnOnBiomeIndex: 1
+    density: 0.1
+    minScale: 1
+    maxScale: 1
+    heightOffset: 0
+  - name: Flower_2
+    prefab: {fileID: 145908, guid: 46c53497e3001f54a99bbdccd3d1a96f, type: 3}
+    collisionPrefab: {fileID: 0}
+    spawnOnBiomeIndex: 1
     density: 0.1
     minScale: 1
     maxScale: 1

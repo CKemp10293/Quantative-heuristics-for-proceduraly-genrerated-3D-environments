@@ -17,7 +17,7 @@ MonoBehaviour:
     height: 0.1
     colour: {r: 0.3921569, g: 0.5843138, b: 0.9294118, a: 1}
   - name: Understory
-    height: 0.3
+    height: 0.4
     colour: {r: 0.21960784, g: 0.29411766, b: 0.16862746, a: 1}
   - name: Understory
     height: 0.6

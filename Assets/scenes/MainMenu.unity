@@ -287,6 +287,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::mainMenuNav
   mainScreenUI: {fileID: 1340988625}
   highScoreScreenUI: {fileID: 1972752489}
+  panelTransitionDuration: 0.3
+  panelHiddenScale: 0.96
 --- !u!4 &68714097
 Transform:
   m_ObjectHideFlags: 0
@@ -757,6 +759,13 @@ MonoBehaviour:
   - {fileID: 11400000, guid: a3b1632fba0a2e415ba423238fdc3601, type: 2}
   - {fileID: 11400000, guid: dac622451a55499e18e5392e3f666246, type: 2}
   - {fileID: 11400000, guid: fe940d1767efa4844a7f58fcede05669, type: 2}
+  panelTransitionDuration: 0.3
+  panelHiddenScale: 0.96
+  menuMusicSource: {fileID: 0}
+  menuMusicClip: {fileID: 8300000, guid: b82fee8d749de4999ad8d58da405a4c4, type: 3}
+  menuMusicVolume: 0.18
+  menuMusicFadeInDuration: 1.5
+  menuMusicFadeOutDuration: 0.8
 --- !u!1 &432925300
 GameObject:
   m_ObjectHideFlags: 0

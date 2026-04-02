@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 using StarterAssets; // Needed to communicate with the player's camera/cursor
 
 public class PauseManager : MonoBehaviour
@@ -11,9 +12,16 @@ public class PauseManager : MonoBehaviour
     [Header("State")]
     public bool isPaused = false;
 
+    [Header("Transition Settings")]
+    [Min(0.01f)] public float panelTransitionDuration = 0.25f;
+    [Min(0.7f)] public float panelHiddenScale = 0.96f;
+    public string mainMenuSceneName = "MainMenu";
+
     [Header("Dependencies")]
     [Tooltip("Drag the StarterAssetsInputs component here so we can control the cursor")]
     public StarterAssetsInputs playerInputs;
+    private Coroutine pauseTransitionCoroutine;
+    private Coroutine galleryTransitionCoroutine;
 
     private void Start()
     {
@@ -49,7 +57,7 @@ public class PauseManager : MonoBehaviour
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
 
-        SetCanvasState(pauseMenuUI, true);
+        SetPauseCanvasStateWithTransition(pauseMenuUI, true);
     }
 
     public void ResumeGame()
@@ -64,15 +72,15 @@ public class PauseManager : MonoBehaviour
         Cursor.visible = false;
 
         // Hide all pause-related UI
-        SetCanvasState(pauseMenuUI, false);
-        SetCanvasState(galleryPanelUI, false);
+        SetPauseCanvasStateWithTransition(pauseMenuUI, false);
+        SetGalleryCanvasStateWithTransition(galleryPanelUI, false);
     }
 
     public void OpenGallery()
     {
         // Hide main pause menu, show gallery
-        SetCanvasState(pauseMenuUI, false);
-        SetCanvasState(galleryPanelUI, true);
+        SetPauseCanvasStateWithTransition(pauseMenuUI, false);
+        SetGalleryCanvasStateWithTransition(galleryPanelUI, true);
         
         // Tell the GalleryManager to fetch the files!
         GalleryManager.Instance.PopulateGallery();
@@ -81,8 +89,8 @@ public class PauseManager : MonoBehaviour
     public void CloseGallery()
     {
         // Hide gallery, show main pause menu
-        SetCanvasState(galleryPanelUI, false);
-        SetCanvasState(pauseMenuUI, true);
+        SetGalleryCanvasStateWithTransition(galleryPanelUI, false);
+        SetPauseCanvasStateWithTransition(pauseMenuUI, true);
         
         // Tell GalleryManager to flush RAM
         GalleryManager.Instance.ClearGallery();
@@ -90,8 +98,19 @@ public class PauseManager : MonoBehaviour
 
     public void QuitGame()
     {
-        Debug.Log("Exiting Game...");
-        Application.Quit();
+        // Ensure normal timescale/cursor state before changing scenes.
+        isPaused = false;
+        Time.timeScale = 1f;
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+
+        if (playerInputs != null)
+        {
+            playerInputs.cursorLocked = false;
+            playerInputs.cursorInputForLook = false;
+        }
+
+        SceneManager.LoadScene(mainMenuSceneName);
     }
 
     private void SetCanvasState(CanvasGroup canvas, bool isActive)
@@ -100,5 +119,68 @@ public class PauseManager : MonoBehaviour
         canvas.alpha = isActive ? 1f : 0f;
         canvas.interactable = isActive;
         canvas.blocksRaycasts = isActive;
+        canvas.transform.localScale = isActive ? Vector3.one : Vector3.one * panelHiddenScale;
+    }
+
+    private void SetPauseCanvasStateWithTransition(CanvasGroup canvas, bool isActive)
+    {
+        if (canvas == null) return;
+
+        if (pauseTransitionCoroutine != null)
+        {
+            StopCoroutine(pauseTransitionCoroutine);
+        }
+
+        pauseTransitionCoroutine = StartCoroutine(FadeCanvas(canvas, isActive, true));
+    }
+
+    private void SetGalleryCanvasStateWithTransition(CanvasGroup canvas, bool isActive)
+    {
+        if (canvas == null) return;
+
+        if (galleryTransitionCoroutine != null)
+        {
+            StopCoroutine(galleryTransitionCoroutine);
+        }
+
+        galleryTransitionCoroutine = StartCoroutine(FadeCanvas(canvas, isActive, false));
+    }
+
+    private System.Collections.IEnumerator FadeCanvas(CanvasGroup canvas, bool isActive, bool isPausePanel)
+    {
+        float duration = Mathf.Max(0.01f, panelTransitionDuration);
+        float elapsed = 0f;
+        float start = canvas.alpha;
+        float target = isActive ? 1f : 0f;
+        Vector3 startScale = canvas.transform.localScale;
+        Vector3 targetScale = isActive ? Vector3.one : Vector3.one * panelHiddenScale;
+
+        // Prevent interaction until we finish.
+        canvas.interactable = false;
+        canvas.blocksRaycasts = false;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            t = t * t * (3f - 2f * t);
+            canvas.alpha = Mathf.Lerp(start, target, t);
+            canvas.transform.localScale = Vector3.Lerp(startScale, targetScale, t);
+            yield return null;
+        }
+
+        canvas.alpha = target;
+        canvas.transform.localScale = targetScale;
+        canvas.interactable = isActive;
+        canvas.blocksRaycasts = isActive;
+
+        if (isPausePanel)
+        {
+            pauseTransitionCoroutine = null;
+        }
+        else
+        {
+            galleryTransitionCoroutine = null;
+        }
     }
 }
