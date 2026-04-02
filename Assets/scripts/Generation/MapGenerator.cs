@@ -272,7 +272,7 @@ public class MapGenerator : MonoBehaviour
             return;
         }
 
-        activePresetIndex = Mathf.Clamp(activePresetIndex,0,availablePresets.Count);
+        activePresetIndex = Mathf.Clamp(activePresetIndex, 0, availablePresets.Count - 1);
         MapConfig activeConfig = availablePresets[activePresetIndex];
 
         if(oceanObject != null)

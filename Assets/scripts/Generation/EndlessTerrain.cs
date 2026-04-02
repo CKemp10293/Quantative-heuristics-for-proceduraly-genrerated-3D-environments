@@ -7,6 +7,8 @@ using System.Collections.Generic;
 /// </summary>
 public class EndlessTerrain : MonoBehaviour
 {
+    private static int s_updateTreesLogCount;
+
     const float scale = 1f;
     float thresholdForViewerMoveChunkUpdate = 15f;
     float sqrthresholdForViewerMoveChunkUpdate;
@@ -233,6 +235,7 @@ public class EndlessTerrain : MonoBehaviour
             TreePreset preset = mapGenerator.availablePresets[mapData.presetIndex].treePreset;
             if(preset == null || preset.prefabConfigs == null) return ;
 
+            
             // Toggle high-fidelity physics only on LOD 0
             if(LODindex == 0)
             {

@@ -32,11 +32,10 @@ public class DiskIOWorker
         {
             string existingJson = File.ReadAllText(jsonPath);
             database = JsonUtility.FromJson<PhotoDatabase>(existingJson);
-            
-            // Safety check in case the JSON was corrupted or empty
-            if (database == null) database = new PhotoDatabase();
-            if (database.allPhotos == null) database.allPhotos = new List<PhotoMetadata>();
         }
+        // Safety check in case the JSON was corrupted or empty
+        if (database == null) database = new PhotoDatabase();
+        if (database.allPhotos == null) database.allPhotos = new List<PhotoMetadata>();
 
         // Add our brand new photo's math data to the list
         database.allPhotos.Add(metadata);
@@ -47,6 +46,6 @@ public class DiskIOWorker
         // Save the updated database to the hard drive
         File.WriteAllText(jsonPath, newJson);
 
-        Debug.Log($"✅ SUCCESS: Photo and Metadata saved to disk! ID: {metadata.photoID}");
+        Debug.Log($"SUCCESS: Photo and Metadata saved to disk! ID: {metadata.photoID}");
     }
 }

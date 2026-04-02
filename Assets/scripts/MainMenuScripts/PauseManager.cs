@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 using StarterAssets; // Needed to communicate with the player's camera/cursor
 
 public class PauseManager : MonoBehaviour
@@ -208,6 +209,26 @@ public class PauseManager : MonoBehaviour
         else
         {
             galleryTransitionCoroutine = null;
+        }
+    }
+
+    /// <summary>
+    /// Logged runs showed gameplay canvases on Constant Pixel Size (not scaling with resolution).
+    /// Converts those to Scale With Screen Size for consistent layout across resolutions.
+    /// </summary>
+    private void ApplyResponsiveCanvasScalersIfConstantPixelSize()
+    {
+        var scalers = UnityEngine.Object.FindObjectsByType<CanvasScaler>(FindObjectsSortMode.None);
+        for (int i = 0; i < scalers.Length; i++)
+        {
+            CanvasScaler s = scalers[i];
+            if (s == null) continue;
+            if (s.uiScaleMode != CanvasScaler.ScaleMode.ConstantPixelSize) continue;
+
+            s.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            s.referenceResolution = new Vector2(1920f, 1080f);
+            s.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            s.matchWidthOrHeight = 0.5f;
         }
     }
 }

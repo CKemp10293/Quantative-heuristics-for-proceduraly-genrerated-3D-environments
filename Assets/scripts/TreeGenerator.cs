@@ -5,6 +5,9 @@ using UnityEngine.Rendering;
 [ExecuteInEditMode]
 public class TreeGenerator : MonoBehaviour
 {
+    private static int s_initLogCount;
+    private static bool s_loggedDrawAttempt;
+
     [HideInInspector][SerializeField] private Mesh treeMesh;
     [HideInInspector][SerializeField] private List<Material> treeMaterials = new List<Material>();
     [SerializeField] private List<Matrix4x4> allTransforms = new List<Matrix4x4>();
@@ -78,7 +81,7 @@ public class TreeGenerator : MonoBehaviour
 
         if (isBatched && treeMesh != null && treeMaterials.Count > 0)
         {
-            // OPTIMIZATION: Using a standard 'for' loop avoids the hidden enumerator allocation of 'foreach'
+            // Using a standard 'for' loop avoids the hidden enumerator allocation of 'foreach'
             for (int b = 0; b < batchArrays.Length; b++)
             {
                 for (int i = 0; i < treeMesh.subMeshCount; i++)
