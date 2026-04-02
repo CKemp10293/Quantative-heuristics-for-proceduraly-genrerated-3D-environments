@@ -7,6 +7,12 @@ public class mainMenuNav : MonoBehaviour
     public CanvasGroup mainScreenUI;
     [Tooltip("The Canvas Group holding your Podium")]
     public CanvasGroup highScoreScreenUI;
+	[Tooltip("The Canvas Group holding your Settings tab content")]
+	public CanvasGroup settingsScreenUI;
+
+	[Header("Optional Controllers")]
+	[Tooltip("Optional controller for the settings screen (used for future settings content)")]
+	public mainMenuSettingsController settingsController;
 
     [Header("Transition Settings")]
     [Min(0.01f)] public float panelTransitionDuration = 0.3f;
@@ -19,6 +25,7 @@ public class mainMenuNav : MonoBehaviour
         // Ensure the game starts on the correct screen
         SetCanvasState(mainScreenUI, true);
         SetCanvasState(highScoreScreenUI, false);
+		SetCanvasState(settingsScreenUI, false);
     }
 
     public void OpenHighScores()
@@ -30,6 +37,18 @@ public class mainMenuNav : MonoBehaviour
     {
         SwitchPanel(highScoreScreenUI, mainScreenUI);
     }
+
+	public void OpenSettings()
+	{
+		SwitchPanel(mainScreenUI, settingsScreenUI);
+		if (settingsController != null) settingsController.OnSettingsOpened();
+	}
+
+	public void CloseSettings()
+	{
+		SwitchPanel(settingsScreenUI, mainScreenUI);
+		if (settingsController != null) settingsController.OnSettingsClosed();
+	}
 
     private void SwitchPanel(CanvasGroup fromPanel, CanvasGroup toPanel)
     {

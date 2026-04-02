@@ -8,6 +8,8 @@ public class mainMenuController : MonoBehaviour
     [Header("panels and containers")]
     public CanvasGroup mainMenuContainer;
     public CanvasGroup biomeSelectContainer;
+    public CanvasGroup settingsContainer;
+    public mainMenuSettingsController settingsController;
     public Image backgroundImage;
 
     [Header("prefabs and assets")]
@@ -65,12 +67,40 @@ public class mainMenuController : MonoBehaviour
 
     public void OpenBiomeSelect()
     {
+        if (settingsContainer != null && settingsContainer.alpha > 0.01f)
+        {
+            SetPanelHiddenImmediate(settingsContainer);
+        }
+
         SwitchPanel(mainMenuContainer,biomeSelectContainer);
+    }
+
+    public void OpenSettings()
+    {
+        if (settingsContainer == null) return;
+
+        if (biomeSelectContainer != null && biomeSelectContainer.alpha > 0.01f)
+        {
+            SetPanelHiddenImmediate(biomeSelectContainer);
+        }
+
+        SwitchPanel(mainMenuContainer, settingsContainer);
+        if (settingsController != null) settingsController.OnSettingsOpened();
     }
 
     public void BackToMainMenu()
     {
-        SwitchPanel(biomeSelectContainer,mainMenuContainer);
+        if (settingsContainer != null && settingsContainer.alpha > 0.01f)
+        {
+            SwitchPanel(settingsContainer, mainMenuContainer);
+            if (settingsController != null) settingsController.OnSettingsClosed();
+            return;
+        }
+
+        if (biomeSelectContainer != null && biomeSelectContainer.alpha > 0.01f)
+        {
+            SwitchPanel(biomeSelectContainer,mainMenuContainer);
+        }
     }
 
     private void OnBiomeClicked(MapConfig clickedBiome)
@@ -115,6 +145,13 @@ public class mainMenuController : MonoBehaviour
         biomeSelectContainer.alpha = 0f;
         biomeSelectContainer.interactable = biomeSelectContainer.blocksRaycasts = false;
         biomeSelectContainer.transform.localScale = Vector3.one * panelHiddenScale;
+
+        if (settingsContainer != null)
+        {
+            settingsContainer.alpha = 0f;
+            settingsContainer.interactable = settingsContainer.blocksRaycasts = false;
+            settingsContainer.transform.localScale = Vector3.one * panelHiddenScale;
+        }
 
     }
 
@@ -240,5 +277,13 @@ public class mainMenuController : MonoBehaviour
         toPanel.interactable = true;
         toPanel.blocksRaycasts = true;
         panelTransitionCoroutine = null;
+    }
+
+    private void SetPanelHiddenImmediate(CanvasGroup panel)
+    {
+        panel.alpha = 0f;
+        panel.interactable = false;
+        panel.blocksRaycasts = false;
+        panel.transform.localScale = Vector3.one * panelHiddenScale;
     }
 }

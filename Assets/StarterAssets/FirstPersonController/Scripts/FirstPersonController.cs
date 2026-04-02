@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.Rendering;
 
 
@@ -55,6 +55,14 @@ namespace StarterAssets
 		[Tooltip("How far in degrees can you move the camera down")]
 		public float BottomClamp = -90.0f;
 
+		[Header("First Person Clipping Fix")]
+		[Tooltip("Body renderers to hide when looking up far enough to avoid clipping into the head")]
+		public Renderer[] bodyRenderersToHideOnLookUp;
+		[Tooltip("Pitch angle (in degrees) at or above which body renderers are hidden")]
+		[Range(-90f, 90f)] public float hideBodyPitchThreshold = 70f;
+		[Tooltip("Enable if your look input uses opposite pitch direction")]
+		public bool invertLookUpPitchCheck = false;
+
 		// swimming
 		[Header("Ocean Settings")]
 		public bool oceanEnabled = true;
@@ -109,6 +117,7 @@ namespace StarterAssets
 		// timeout deltatime
 		private float _jumpTimeoutDelta;
 		private float _fallTimeoutDelta;
+		private bool _isBodyHiddenForPitch;
 
 	
 #if ENABLE_INPUT_SYSTEM
@@ -200,6 +209,7 @@ namespace StarterAssets
 		private void LateUpdate()
 		{
 			CameraRotation();
+			UpdateBodyVisibilityForPitch();
 			SwimmingVisuals();
 		}
 
@@ -440,6 +450,24 @@ namespace StarterAssets
 			if (lfAngle < -360f) lfAngle += 360f;
 			if (lfAngle > 360f) lfAngle -= 360f;
 			return Mathf.Clamp(lfAngle, lfMin, lfMax);
+		}
+
+		private void UpdateBodyVisibilityForPitch()
+		{
+			if (bodyRenderersToHideOnLookUp == null || bodyRenderersToHideOnLookUp.Length == 0) return;
+
+			bool shouldHideBody = invertLookUpPitchCheck
+				? _cinemachineTargetPitch <= hideBodyPitchThreshold
+				: _cinemachineTargetPitch >= hideBodyPitchThreshold;
+			if (shouldHideBody == _isBodyHiddenForPitch) return;
+
+			for (int i = 0; i < bodyRenderersToHideOnLookUp.Length; i++)
+			{
+				if (bodyRenderersToHideOnLookUp[i] == null) continue;
+				bodyRenderersToHideOnLookUp[i].enabled = !shouldHideBody;
+			}
+
+			_isBodyHiddenForPitch = shouldHideBody;
 		}
 
 		private void OnDrawGizmosSelected()
