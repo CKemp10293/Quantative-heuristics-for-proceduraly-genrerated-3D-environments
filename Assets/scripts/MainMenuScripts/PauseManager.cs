@@ -8,6 +8,7 @@ public class PauseManager : MonoBehaviour
     [Header("UI Panels")]
     public CanvasGroup pauseMenuUI;
     public CanvasGroup galleryPanelUI;
+    public CanvasGroup SettingsUI;
 
     [Header("State")]
     public bool isPaused = false;
@@ -22,12 +23,14 @@ public class PauseManager : MonoBehaviour
     public StarterAssetsInputs playerInputs;
     private Coroutine pauseTransitionCoroutine;
     private Coroutine galleryTransitionCoroutine;
+    private Coroutine settingTransitionCoroutine;
 
     private void Start()
     {
         // Ensure UI is hidden on start
         SetCanvasState(pauseMenuUI, false);
         SetCanvasState(galleryPanelUI, false);
+        SetCanvasState(SettingsUI,false);
     }
 
     private void Update()
@@ -74,6 +77,18 @@ public class PauseManager : MonoBehaviour
         // Hide all pause-related UI
         SetPauseCanvasStateWithTransition(pauseMenuUI, false);
         SetGalleryCanvasStateWithTransition(galleryPanelUI, false);
+    }
+
+    public void Opensettings()
+    {
+        SetPauseCanvasStateWithTransition(pauseMenuUI,false);
+        SetSettingCanvaStateWithTransition(SettingsUI,true);        
+    }
+
+    public void CloseSettings()
+    {
+        SetSettingCanvaStateWithTransition(SettingsUI,false);
+        SetPauseCanvasStateWithTransition(pauseMenuUI,true);
     }
 
     public void OpenGallery()
@@ -144,6 +159,18 @@ public class PauseManager : MonoBehaviour
         }
 
         galleryTransitionCoroutine = StartCoroutine(FadeCanvas(canvas, isActive, false));
+    }
+
+    private void SetSettingCanvaStateWithTransition(CanvasGroup canvas,bool isActive)
+    {
+        if(canvas == null) return;
+
+        if (settingTransitionCoroutine != null)
+        {
+            StopCoroutine(galleryTransitionCoroutine);
+        }
+
+        galleryTransitionCoroutine = StartCoroutine(FadeCanvas(canvas,isActive,false));
     }
 
     private System.Collections.IEnumerator FadeCanvas(CanvasGroup canvas, bool isActive, bool isPausePanel)
