@@ -8,5 +8,7 @@ public class PhotoMetadata
     public float saturationScore;
     public float contrastScore;
     public float symmetryScore;
+    public float harmonyScore;
+    public float variancePenalty;
     public float totalScore;
 }

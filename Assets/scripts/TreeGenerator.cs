@@ -5,9 +5,6 @@ using UnityEngine.Rendering;
 [ExecuteInEditMode]
 public class TreeGenerator : MonoBehaviour
 {
-    private static int s_initLogCount;
-    private static bool s_loggedDrawAttempt;
-
     [HideInInspector][SerializeField] private Mesh treeMesh;
     [HideInInspector][SerializeField] private List<Material> treeMaterials = new List<Material>();
     [SerializeField] private List<Matrix4x4> allTransforms = new List<Matrix4x4>();

@@ -15,12 +15,17 @@ public class ThumbnailUI : MonoBehaviour
     private Texture2D loadedTexture;
     private bool isLoaded = false;
 
+    private PhotoMetadata myData;
+
     // Called by the GalleryManager when spawning the prefab
     public void Initialize(PhotoMetadata meta)
     {
+        myData = meta;
         filePath = Path.Combine(Application.persistentDataPath, "Photos", meta.photoID + ".png");
         scoreText.text = $"Score: {meta.totalScore:F1}/10";
         photoDisplay.color = Color.black; // Show black box while unloaded
+
+        GetComponent<Button>().onClick.AddListener(OnThumbnailClicked);
     }
 
     // Call this when the ScrollRect detects this prefab has entered the screen
@@ -51,5 +56,11 @@ public class ThumbnailUI : MonoBehaviour
 
         if (loadedTexture != null) Destroy(loadedTexture);
         isLoaded = false;
+    }
+
+    public void OnThumbnailClicked()
+    {
+        // Tell the new manager to open the detail view using this specific data
+        PhotoScoreManager.Instance.OpenDetailView(myData);
     }
 }

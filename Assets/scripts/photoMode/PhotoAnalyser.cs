@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Jobs;
 
@@ -25,6 +26,7 @@ public static class PhotoAnalyser
 
         float totalSaturation = 0f;
         float totalLuminance = 0f;
+        int validColorPixels = 0;
 
         // Hue buckets for color dominance calculation
         float[] hues = new float[360]; 
@@ -46,10 +48,13 @@ public static class PhotoAnalyser
             pixelLuminences[i] = lum;
             totalLuminance += lum;
 
-            int hueIndex = Mathf.Clamp((int)(h * 360f), 0, 359);
-            hues[hueIndex]++;
-
-
+            // Ignore grayscale, black, and blown-out white pixels for color metrics
+            if (s > 0.15f && v > 0.15f && v < 0.95f)
+            {
+                int hueIndex = Mathf.Clamp((int)(h * 360f), 0, 359);
+                hues[hueIndex]++;
+                validColorPixels++;
+            }
         }
 
         // Pass 2: RMS Contrast Calculation
@@ -82,13 +87,92 @@ public static class PhotoAnalyser
 
         float avgSymmetryDiff = symmetryDiffSum / ((width / 2) * height);
 
-        return GenerateScores(id, totalSaturation / pixelCount, rmsContrast, avgSymmetryDiff, hues, pixelCount);
+        List<int> dominantHues = GetDominantHues(hues, 3);
+        float harmonyScoreRaw = CalculateHarmony(dominantHues);
+        
+        float maxHueCount = dominantHues.Count > 0 ? hues[dominantHues[0]] : 0;
+        float variancePenaltyRaw = CalculateMonolithicPenalty(maxHueCount, validColorPixels);
+
+        return GenerateScores(id, totalSaturation / pixelCount, rmsContrast, avgSymmetryDiff, harmonyScoreRaw, variancePenaltyRaw);
     }
+
+    private static List<int> GetDominantHues(float[] hues,int topN)
+    {
+        List<int> peaks = new List<int>();
+        float[] huesCopy = (float[])hues.Clone();
+
+        for (int i = 0; i < topN; i++)
+        {
+           float maxVal = 0;
+           int maxIndex = -1;
+           for (int j = 0; j < 360; j++)
+           {
+            if (huesCopy[j] > maxVal)
+            {
+                maxVal = huesCopy[j];
+                maxIndex = j;
+            }
+           }
+
+           if(maxIndex == -1 || maxVal == 0) break;
+
+           peaks.Add(maxIndex);
+
+           // Wipe out the peak and its immediate neighbors (e.g., +/- 15 degrees) to find distinct next colors
+            for (int w = -15; w <= 15; w++)
+            {
+                int clearIndex = (maxIndex + w + 360) % 360;
+                huesCopy[clearIndex] = 0;
+            } 
+        }
+
+        return peaks;
+    }
+
+    private static float CalculateHarmony(List<int> dominantHues)
+    {
+        if(dominantHues.Count < 2) return 0f;
+
+        float harmonyScore = 0f;
+        float tolerance = 15f;
+
+        // Check pairs for relationships
+        for (int i = 0; i < dominantHues.Count; i++)
+        {
+            for (int j = i + 1; j < dominantHues.Count; j++)
+            {
+                float angle = Mathf.Min(Mathf.Abs(dominantHues[i] - dominantHues[j]),
+                              360 - Mathf.Abs(dominantHues[i] - dominantHues[j]));
+
+                if (Mathf.Abs(angle - 180f) <= tolerance) harmonyScore += 1.0f; // Complementary
+                else if (Mathf.Abs(angle - 120f) <= tolerance) harmonyScore += 0.8f; // Triadic
+                else if (Mathf.Abs(angle - 30f) <= tolerance) harmonyScore += 0.6f;  // Analogous
+            }
+        }
+
+        return Mathf.Clamp01(harmonyScore / 2f);
+    }
+
+    private static float CalculateMonolithicPenalty(float dominantColorPixelCount, int validColorPixels)
+    {
+        if (validColorPixels == 0) return 0f; // Grayscale image, no penalty
+
+        float ratio = dominantColorPixelCount / validColorPixels;
+        float threshold = 0.60f; // 60%
+
+        if (ratio <= threshold) return 0f;
+
+        // Creates a penalty from 0 to 1 based on how far past 60% it goes
+        return Mathf.Clamp01((ratio - threshold) / (1f - threshold));
+    }
+
+
+
 
     /// <summary>
     /// Normalizes raw image data into a standardized 1-10 scoring system.
     /// </summary>
-    private static PhotoMetadata GenerateScores(string id, float avgSat, float contrast, float symmetryDiff, float[] hues, int totalPixels)
+    private static PhotoMetadata GenerateScores(string id, float avgSat, float contrast, float symmetryDiff,float harmonyRaw, float penaltyRaw)
     {
         PhotoMetadata meta = new PhotoMetadata { photoID = id };
 
@@ -103,15 +187,17 @@ public static class PhotoAnalyser
         // Inverse scale: 1.0 minus the normalized difference.
         meta.symmetryScore = Mathf.Clamp((1f - (symmetryDiff / 0.3f)) * 10f, 0f, 10f);
 
-        // Color Dominance (What % of the image is the dominant color?)
-        float maxHuePixels = 0;
-        for (int i = 0; i < 360; i++) if (hues[i] > maxHuePixels) maxHuePixels = hues[i];
-        float dominantPercentage = maxHuePixels / totalPixels;
-        
-        // If 15% of the image is the exact same hue bucket, that's highly dominant.
-        meta.colorScore = Mathf.Clamp((dominantPercentage / 0.15f) * 10f, 0f, 10f);
+        // Scale harmony to 0-10
+        meta.harmonyScore = harmonyRaw * 10f; 
 
-        meta.totalScore = (meta.saturationScore + meta.contrastScore + meta.symmetryScore + meta.colorScore) / 4f;
+        // Weighting integration: Base aesthetics (75%) + Harmony (25%)
+        float baseScore = (meta.saturationScore + meta.contrastScore + meta.symmetryScore) / 3f;
+        float prePenaltyTotal = (baseScore * 0.75f) + (meta.harmonyScore * 0.25f);
+
+        // Apply monolithic penalty (reduces total score by up to 30%)
+        float maxPenaltyMultiplier = 0.30f; 
+        meta.totalScore = prePenaltyTotal * (1f - (penaltyRaw * maxPenaltyMultiplier));
+
         return meta;
     }
 }

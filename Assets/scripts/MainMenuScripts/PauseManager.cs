@@ -26,12 +26,17 @@ public class PauseManager : MonoBehaviour
     private Coroutine galleryTransitionCoroutine;
     private Coroutine settingTransitionCoroutine;
 
+    [Header("New Detail View")]
+    public CanvasGroup photoDetailUI;
+    private Coroutine detailTransitionCoroutine;
+
     private void Start()
     {
         // Ensure UI is hidden on start
         SetCanvasState(pauseMenuUI, false);
         SetCanvasState(galleryPanelUI, false);
         SetCanvasState(SettingsUI,false);
+        SetCanvasState(photoDetailUI, false);
     }
 
     private void Update()
@@ -173,6 +178,23 @@ public class PauseManager : MonoBehaviour
         }
 
         galleryTransitionCoroutine = StartCoroutine(FadeCanvas(canvas,isActive,false));
+    }
+
+    public void ShowPhotoDetail()
+    {
+        // Fade IN the detail panel (leave gallery open in background)
+        if (detailTransitionCoroutine != null) StopCoroutine(detailTransitionCoroutine);
+        detailTransitionCoroutine = StartCoroutine(FadeCanvas(photoDetailUI, true, false));
+    }
+
+    public void ClosePhotoDetail()
+    {
+        // Fade OUT the detail panel
+        if (detailTransitionCoroutine != null) StopCoroutine(detailTransitionCoroutine);
+        detailTransitionCoroutine = StartCoroutine(FadeCanvas(photoDetailUI, false, false));
+    
+        // Flush the high-res texture from memory
+        PhotoScoreManager.Instance.CleanUpMemory();
     }
 
     private System.Collections.IEnumerator FadeCanvas(CanvasGroup canvas, bool isActive, bool isPausePanel)

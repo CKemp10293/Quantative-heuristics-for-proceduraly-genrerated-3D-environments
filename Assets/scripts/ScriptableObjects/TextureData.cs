@@ -1,3 +1,4 @@
+using UnityEditor.Build.Utilities;
 using UnityEngine;
 
 /// <summary>
@@ -48,11 +49,13 @@ public class TextureData : ScriptableObject
     /// </summary>
     public void ApplyToMat(Material material)
     {
+        const int MaxLayers = 8;
+
         int layerCount = layers.Length;
-        Vector4[] baseColours = new Vector4[layerCount];
-        float[] baseStartHeights = new float[layerCount];
-        float[] baseBlends = new float[layerCount];
-        float[] baseTextureScales = new float[layerCount];
+        Vector4[] baseColours = new Vector4[MaxLayers];
+        float[] baseStartHeights = new float[MaxLayers];
+        float[] baseBlends = new float[MaxLayers];
+        float[] baseTextureScales = new float[MaxLayers];
 
         // Loop through our config and extract the data
         for (int i = 0; i < layerCount; i++)
