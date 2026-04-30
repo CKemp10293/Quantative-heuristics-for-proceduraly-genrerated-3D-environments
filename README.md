@@ -63,20 +63,15 @@ This project investigates **Procedural Content Generation (PCG)** techniques in 
 
 ## Screenshots
 
-> *[PLACEHOLDER: Main menu / biome selection screen]*
-<!-- ![Main_menu](docs/images/main_menu.png) -->
+![Main_menu](docs/images/main_menu.png)
 
-> *[PLACEHOLDER: Procedurally generated terrain — desert biome]*
-<!-- ![Desert](docs/images/desert_biome.png) -->
+![Desert](docs/images/desert_biome.png)
 
-> *[PLACEHOLDER: Procedurally generated terrain — village/forest biome]*
-<!-- ![Forest](docs/images/forest_biome.png) -->
+![Forest](docs/images/forest_biome.png)
 
-> *[PLACEHOLDER: Photography mode UI with rule-of-thirds overlay]*
-<!-- ![Photo Mode](docs/images/rule-of-thirds.png) -->
+![Photo Mode](docs/images/rule-of-thirds.png)
 
-> *[PLACEHOLDER: Photo gallery showing captured images and scores]*
-<!-- ![Gallery](docs/images/gallery.png) -->
+![Gallery](docs/images/gallery.png)
 
 ---
 
@@ -113,8 +108,7 @@ The photography system is the core research contribution of this project. Every 
 
 All scores are normalised to a **0–10 scale** and displayed alongside the photo in the gallery.
 
-> *[PLACEHOLDER: Diagram or annotated screenshot showing metric overlays on a captured photo]*
-<!-- ![Metrics](docs/images/ratingIMG_3.png) -->
+![Metrics](docs/images/ratingIMG_3.png)
 
 ---
 
