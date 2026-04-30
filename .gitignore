@@ -42,6 +42,7 @@ ExportedObj/
 *.app/
 *.exe/
 *.apk/
+*_Data/
 
 # OS Generated
 .DS_Store

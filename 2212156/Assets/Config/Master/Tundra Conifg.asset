@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8396512fe863e4deea1903fa497c6f68, type: 3}
+  m_Name: Tundra Conifg
+  m_EditorClassIdentifier: Assembly-CSharp::MapConfig
+  configName: Tundra
+  enableOcean: 0
+  mapAudio: {fileID: 0}
+  sceneName: Tundra
+  backgroundImage: {fileID: 21300000, guid: 8e896dd2161264608a2215062b4ee65e, type: 3}
+  sandMaxHeight: -100
+  grassMaxHeight: 10
+  biomeSnowFootsteps:
+  - {fileID: 8300000, guid: 18b2ef09f655646d39335861684e9f0c, type: 3}
+  biomeGrassFootsteps:
+  - {fileID: 8300000, guid: c8c25e9a8e8ad40a49962d6d1d6bf50f, type: 3}
+  biomeSandFootsteps: []
+  enableWind: 0
+  windColor: {r: 1, g: 1, b: 1, a: 0.5}
+  windThickness: 50
+  windSpeedMultiplier: 1
+  particleWindSize: 0.04
+  birdPrefab: {fileID: 0}
+  birdSpawnRate: 5
+  noisePreset: {fileID: 11400000, guid: 2aeaaf657d3acbfb3962c7f0321e255c, type: 2}
+  biomePreset: {fileID: 11400000, guid: 1959e1a1e2bddc65d923a6e04834678b, type: 2}
+  treePreset: {fileID: 11400000, guid: 9080c74b0f5d5436ca4a897184d2c4a4, type: 2}
+  textureData: {fileID: 11400000, guid: 30b98a49522bb4579900dce6ba119f4b, type: 2}
