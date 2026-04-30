@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 77047702e23f442879b4f2fb0c0419bc, type: 3}
+  m_Name: Desert
+  m_EditorClassIdentifier: Assembly-CSharp::BiomePreset
+  regions:
+  - name: Desert One
+    height: 0.2
+    colour: {r: 1, g: 0.8431373, b: 0, a: 1}
+  - name: Desert Two
+    height: 0.6
+    colour: {r: 0.854902, g: 0.6470588, b: 0.1254902, a: 1}
+  - name: Desert Three
+    height: 0.775
+    colour: {r: 0.7215686, g: 0.5254902, b: 0.04313726, a: 1}

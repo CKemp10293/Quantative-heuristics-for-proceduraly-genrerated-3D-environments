@@ -1,0 +1,55 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5019bcf90624d4991aac7ad4d925ce2d, type: 3}
+  m_Name: tundraPreset
+  m_EditorClassIdentifier: Assembly-CSharp::TreePreset
+  prefabConfigs:
+  - name: Dead_Tree_One
+    prefab: {fileID: 180332, guid: dd61f220c8d4f3643ad0d82a7e0927d3, type: 3}
+    collisionPrefab: {fileID: 968833272184807230, guid: d16ec87812c0947de8bbcf4366df77bc, type: 3}
+    spawnOnBiomeIndex: 0
+    density: 0.01
+    minScale: 1
+    maxScale: 1
+    heightOffset: 0
+  - name: Log
+    prefab: {fileID: 114594, guid: e0bcb36554be1124b8a89d63037350be, type: 3}
+    collisionPrefab: {fileID: 968833272184807230, guid: d16ec87812c0947de8bbcf4366df77bc, type: 3}
+    spawnOnBiomeIndex: 0
+    density: 0.001
+    minScale: 1
+    maxScale: 1
+    heightOffset: 0
+  - name: bush
+    prefab: {fileID: 122670, guid: f7e91e1d54c5ad64f8125310343f0d30, type: 3}
+    collisionPrefab: {fileID: 968833272184807230, guid: d16ec87812c0947de8bbcf4366df77bc, type: 3}
+    spawnOnBiomeIndex: 0
+    density: 0.01
+    minScale: 0.5
+    maxScale: 0.5
+    heightOffset: 0
+  - name: Flower One
+    prefab: {fileID: 145908, guid: 46c53497e3001f54a99bbdccd3d1a96f, type: 3}
+    collisionPrefab: {fileID: 0}
+    spawnOnBiomeIndex: 0
+    density: 0.1
+    minScale: 0.5
+    maxScale: 0.5
+    heightOffset: 0
+  - name: Flower Two
+    prefab: {fileID: 105602, guid: 8f91512376d75e54a9b57ea29926599d, type: 3}
+    collisionPrefab: {fileID: 0}
+    spawnOnBiomeIndex: 0
+    density: 0.1
+    minScale: 0.5
+    maxScale: 0.5
+    heightOffset: 0

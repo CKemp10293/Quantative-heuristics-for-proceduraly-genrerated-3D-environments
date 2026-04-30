@@ -1,0 +1,100 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 97039b3935c862278a67c42b0b459345, type: 3}
+  m_Name: Mountains & Lakes
+  m_EditorClassIdentifier: Assembly-CSharp::NoisePreset
+  settings:
+  - lacunarity: 2
+    persistance: 0.4
+    meshHeightMultiplier: 60
+    meshHeightCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: -0.0011138916
+        value: 0.03503418
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 0.28529748
+        value: 0.124394976
+        inSlope: 0.12730467
+        outSlope: 0.12730467
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0.33333334
+        outWeight: 0.13588509
+      - serializedVersion: 3
+        time: 0.40028816
+        value: 0.23710601
+        inSlope: 1.4184676
+        outSlope: 1.4184676
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0.33333334
+        outWeight: 0.33333334
+      - serializedVersion: 3
+        time: 0.5664661
+        value: 0.64411545
+        inSlope: 1.025221
+        outSlope: 1.025221
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0.33333334
+        outWeight: 0.33333334
+      - serializedVersion: 3
+        time: 0.65379244
+        value: 0.96624666
+        inSlope: 0.48831484
+        outSlope: 0.48831484
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0.33333334
+        outWeight: 0.33333334
+      - serializedVersion: 3
+        time: 0.76346415
+        value: 0.9841894
+        inSlope: 0.61509234
+        outSlope: 0.61509234
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0.33333334
+        outWeight: 0.33333334
+      - serializedVersion: 3
+        time: 0.90892345
+        value: 1.058733
+        inSlope: 1.3837291
+        outSlope: 1.3837291
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0.33333334
+        outWeight: 0.33333334
+      - serializedVersion: 3
+        time: 0.9717407
+        value: 1.157547
+        inSlope: 2
+        outSlope: 2
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    seed: 1
+    octaves: 3
+    noiseScale: 80
+    normalisationMode: 1

@@ -1,0 +1,201 @@
+# Procedural Content Generation — Dissertation Project
+
+A 3D exploration and photography game built in Unity as part of a dissertation research project. The game generates an infinite, procedurally created world for players to explore and photograph, with an automated aesthetic analysis system that scores each captured photo.
+
+---
+
+<!-- ![Banner Screenshot](docs/images/banner.png) -->
+> *[PLACEHOLDER: Wide banner screenshot of the game world]*
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Features](#features)
+- [Screenshots](#screenshots)
+- [How to Play](#how-to-play)
+- [Photography System](#photography-system)
+- [Technical Architecture](#technical-architecture)
+- [Building & Running](#building--running)
+- [Research Context](#research-context)
+
+---
+
+## Overview
+
+This project investigates **Procedural Content Generation (PCG)** techniques in Unity, with a particular focus on whether procedurally generated environments can produce visually appealing scenes. Players explore infinite biome-based terrain, capture in-game photographs, and receive automatic aesthetic quality scores based on established compositional principles.
+
+---
+
+## Features
+
+### Procedural Terrain Generation
+- Infinite, chunk-based terrain built with multi-octave Perlin noise
+- Multiple configurable biomes, each with unique textures, colours, and audio
+- Height-based terrain colouring (sand, grass, rock, snow)
+- Level of Detail (LOD) system for efficient rendering at distance
+- Threaded map and mesh generation to keep the main thread responsive
+
+### Biome System
+- Select a biome from the main menu before entering the world
+- Each biome defines its own noise parameters, colour regions, ambient sounds, wind effects, and optional ocean
+- Examples include Desert and Village-themed environments
+
+### Vegetation
+- Procedurally placed trees using seeded RNG for deterministic, reproducible placement
+- GPU instancing via `DrawMeshInstanced` — up to 1023 trees rendered per batch
+- Physics colliders active only at close range (LOD 0) to preserve performance
+
+### Dynamic Environment
+- Day/night cycle with sun and moon movement
+- Bird spawning for atmospheric depth
+- Biome-specific wind particle effects
+- Context-aware footstep audio (sand, grass, snow)
+
+### Photography Mode
+- In-game camera with UI overlay and shutter feedback
+- Rule-of-thirds grid overlay (toggle with **G**)
+- Automatic aesthetic scoring on every captured photo
+- Gallery to browse all saved photos with their scores and metadata
+
+---
+
+## Screenshots
+
+> *[PLACEHOLDER: Main menu / biome selection screen]*
+
+> *[PLACEHOLDER: Procedurally generated terrain — desert biome]*
+
+> *[PLACEHOLDER: Procedurally generated terrain — village/forest biome]*
+
+> *[PLACEHOLDER: Photography mode UI with rule-of-thirds overlay]*
+
+> *[PLACEHOLDER: Photo gallery showing captured images and scores]*
+
+> *[PLACEHOLDER: Day/night cycle comparison]*
+
+---
+
+## How to Play
+
+| Action | Control |
+|---|---|
+| Move | WASD |
+| Look | Mouse |
+| Enter Photo Mode | *[PLACEHOLDER: key]* |
+| Capture Photo | *[PLACEHOLDER: key]* |
+| Toggle Rule-of-Thirds Grid | G |
+| Pause | Escape |
+
+1. Launch the game and select a biome from the main menu.
+2. Explore the procedurally generated world.
+3. Enter photo mode to frame a shot.
+4. Capture the photo — it is automatically scored and saved to your gallery.
+5. Open the gallery to review your photos and their aesthetic scores.
+
+---
+
+## Photography System
+
+The photography system is the core research contribution of this project. Every captured photo is passed through an analysis pipeline that computes several aesthetic metrics:
+
+| Metric | Description |
+|---|---|
+| **Saturation** | Measures colour vibrancy across the image |
+| **Contrast** | RMS contrast — the spread of luminance values |
+| **Symmetry** | Bilateral symmetry detection |
+| **Colour Dominance** | Identifies the dominant hue in the scene |
+| **Balance** | Compositional weight distribution across the frame |
+
+All scores are normalised to a **0–10 scale** and displayed alongside the photo in the gallery.
+
+> *[PLACEHOLDER: Diagram or annotated screenshot showing metric overlays on a captured photo]*
+
+---
+
+## Technical Architecture
+
+```
+Assets/scripts/
+├── Generation/
+│   ├── MapGenerator.cs       # Chunk generation, biome assignment, tree placement
+│   ├── EndlessTerrain.cs     # Infinite terrain streaming and LOD management
+│   ├── MeshGenerator.cs      # Height map → 3D mesh conversion
+│   ├── Noise.cs              # Perlin noise utilities
+│   └── TextureGenerator.cs   # Colour map generation
+│
+├── photoMode/
+│   ├── PhotoModeController.cs  # Camera input and UI management
+│   ├── PhotoAnalyser.cs        # Aesthetic metric computation
+│   ├── PhotoScoreManager.cs    # Score aggregation
+│   └── PhotoDatabaseManager.cs # Photo storage and retrieval
+│
+├── environment/
+│   ├── BirdSpawner.cs        # Wildlife spawning
+│   ├── DayNightCycle.cs      # Sun/moon and time-of-day
+│   └── PlayerSpawner.cs      # Player initialisation
+│
+├── ScriptableObjects/
+│   ├── MapConfig.cs          # Per-biome configuration (textures, audio, wind, etc.)
+│   ├── NoisePreset.cs        # Noise generation parameters
+│   ├── BiomePreset.cs        # Height regions and colours
+│   └── TreeConfig.cs         # Vegetation spawn rules
+│
+└── MainMenuScripts/
+    ├── mainMenuNav.cs        # Menu navigation and biome selection
+    └── PauseManager.cs       # In-game pause control
+```
+
+### Performance Highlights
+- Terrain and mesh generation run on background threads
+- GPU instancing for vegetation (1023 trees per draw call)
+- LOD system reduces polygon count at distance
+- Physics colliders disabled beyond close range
+- Chunk updates triggered only on meaningful player movement
+
+---
+
+## Building & Running
+
+> *[PLACEHOLDER: Build requirements — Unity version, render pipeline, etc.]*
+
+### Prerequisites
+- Unity *[PLACEHOLDER: version]* with Universal Render Pipeline (URP)
+- TextMesh Pro package
+
+### Running a Pre-built Binary (Linux)
+
+```bash
+chmod +x testBuild.x86_64
+./testBuild.x86_64
+```
+
+### Building from Source
+
+1. Open the project in Unity Hub.
+2. Open `Assets/scenes/MainMenu.unity` as the startup scene.
+3. Add both `MainMenu.unity` and `mainScene.unity` to the build settings.
+4. Build for your target platform.
+
+---
+
+## Research Context
+
+This project was developed as part of a university dissertation exploring:
+
+1. **Efficient infinite terrain generation** — chunk streaming, threading, and LOD
+2. **Biome-based environmental variation** — configurable, data-driven world design
+3. **Optimised vegetation rendering** — GPU instancing at scale
+4. **Computational aesthetics** — using photographic composition metrics to evaluate the visual quality of procedurally generated scenes
+
+The photography and scoring system serves as both a data-collection tool and a player feedback mechanism, allowing quantitative evaluation of whether PCG environments produce aesthetically pleasing compositions.
+
+---
+
+## Credits
+
+- 3D Assets — Synty Studios
+- First Person Controller — Unity Starter Assets
+- Render Pipeline — Universal Render Pipeline (URP)
+- UI — TextMesh Pro
