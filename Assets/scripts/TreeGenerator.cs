@@ -7,48 +7,73 @@ public class TreeGenerator : MonoBehaviour
 {
     [HideInInspector][SerializeField] private Mesh treeMesh;
     [HideInInspector][SerializeField] private List<Material> treeMaterials = new List<Material>();
-    [SerializeField] private List<Matrix4x4> allTransforms = new List<Matrix4x4>();
 
-    private Matrix4x4[][] batchArrays;
-    private int[] batchCounts;
-    private bool isBatched = false;
-    public void Initialise(List<Matrix4x4> transforms, GameObject prefab)
+    // [lodIndex][batchIndex] — all LOD variants built once at Initialise time
+    private Matrix4x4[][][] lodBatchArrays;
+    private int[][]         lodBatchCounts;
+    private Bounds[][]      lodBatchBounds;  // per-batch AABB for frustum culling
+    private int             currentLOD = 0;
+
+    public bool IsInitialised { get; private set; }
+
+    private readonly Plane[] _frustumPlanes = new Plane[6];
+    private Camera _mainCamera;
+
+    /// <summary>
+    /// Called once per prefab type. Builds and caches draw batches for every LOD level
+    /// so that LOD transitions are a free index swap rather than a batch rebuild.
+    /// </summary>
+    public void Initialise(List<Matrix4x4>[] matricesPerLOD, GameObject prefab)
     {
-        this.allTransforms = new List<Matrix4x4>(transforms);
-        
-        // Search inside children for the renderer
-        // Synty assets often put the mesh on a child object named "Mesh" or "LOD0"
         MeshRenderer mr = prefab.GetComponentInChildren<MeshRenderer>();
-        MeshFilter mf = prefab.GetComponentInChildren<MeshFilter>();
+        MeshFilter   mf = prefab.GetComponentInChildren<MeshFilter>();
 
-        if (mr == null || mf == null) 
+        if (mr == null || mf == null)
         {
             Debug.LogError("Could not find MeshRenderer or MeshFilter on the tree prefab!");
             return;
         }
 
-        this.treeMesh = mf.sharedMesh;
-        this.treeMaterials = new List<Material>(mr.sharedMaterials);
+        treeMesh      = mf.sharedMesh;
+        treeMaterials = new List<Material>(mr.sharedMaterials);
 
-        BuildBatches();
+        int numLODs    = matricesPerLOD.Length;
+        lodBatchArrays = new Matrix4x4[numLODs][][];
+        lodBatchCounts = new int[numLODs][];
+        lodBatchBounds = new Bounds[numLODs][];
+
+        for (int lod = 0; lod < numLODs; lod++)
+            BuildBatchesForLOD(lod, matricesPerLOD[lod]);
+
+        _mainCamera  = Camera.main;
+        IsInitialised = true;
     }
 
-    void BuildBatches()
+    /// <summary>O(1) LOD switch — just updates the active index.</summary>
+    public void SetLOD(int lodIndex)
     {
-        if (allTransforms == null || allTransforms.Count == 0) return;
+        currentLOD = Mathf.Clamp(lodIndex, 0, lodBatchArrays != null ? lodBatchArrays.Length - 1 : 0);
+    }
 
-        // Build the chunks using temporary lists
-        List<List<Matrix4x4>> tempBatches = new List<List<Matrix4x4>>();
+    void BuildBatchesForLOD(int lodIndex, List<Matrix4x4> matrices)
+    {
+        if (matrices == null || matrices.Count == 0)
+        {
+            lodBatchArrays[lodIndex] = new Matrix4x4[0][];
+            lodBatchCounts[lodIndex] = new int[0];
+            lodBatchBounds[lodIndex] = new Bounds[0];
+            return;
+        }
+
+        var tempBatches = new List<List<Matrix4x4>>();
         tempBatches.Add(new List<Matrix4x4>());
-
         int batchIndex = 0;
-        int count = 0;
+        int count      = 0;
 
-        foreach (var t in allTransforms)
+        foreach (var t in matrices)
         {
             tempBatches[batchIndex].Add(t);
-            count++;
-            if (count >= 1023) // Unity's strict instancing limit
+            if (++count >= 1023)
             {
                 tempBatches.Add(new List<Matrix4x4>());
                 batchIndex++;
@@ -56,49 +81,73 @@ public class TreeGenerator : MonoBehaviour
             }
         }
 
-        // Convert to permanent arrays once
-        batchArrays = new Matrix4x4[tempBatches.Count][];
-        batchCounts = new int[tempBatches.Count];
+        int numBatches         = tempBatches.Count;
+        lodBatchArrays[lodIndex] = new Matrix4x4[numBatches][];
+        lodBatchCounts[lodIndex] = new int[numBatches];
+        lodBatchBounds[lodIndex] = new Bounds[numBatches];
 
-        for (int i = 0; i < tempBatches.Count; i++)
+        for (int i = 0; i < numBatches; i++)
         {
-            batchArrays[i] = tempBatches[i].ToArray(); // Allocation happens ONCE here
-            batchCounts[i] = tempBatches[i].Count;
+            lodBatchArrays[lodIndex][i] = tempBatches[i].ToArray();
+            lodBatchCounts[lodIndex][i] = tempBatches[i].Count;
+            lodBatchBounds[lodIndex][i] = ComputeBatchBounds(tempBatches[i]);
         }
+    }
 
-        isBatched = true;
+    static Bounds ComputeBatchBounds(List<Matrix4x4> batch)
+    {
+        Vector3 min = new Vector3( float.MaxValue,  float.MaxValue,  float.MaxValue);
+        Vector3 max = new Vector3(-float.MaxValue, -float.MaxValue, -float.MaxValue);
+        foreach (var m in batch)
+        {
+            Vector3 pos = m.GetColumn(3);
+            min = Vector3.Min(min, pos);
+            max = Vector3.Max(max, pos);
+        }
+        max.y += 20f; // Vertical padding to cover tree canopy height
+        var b = new Bounds();
+        b.SetMinMax(min, max);
+        return b;
     }
 
     void Update()
     {
-       if (!isBatched && allTransforms != null && allTransforms.Count > 0)
-        {
-            BuildBatches();
-        }
+        if (!IsInitialised || treeMesh == null || treeMaterials.Count == 0) return;
+        if (lodBatchArrays == null || currentLOD >= lodBatchArrays.Length)  return;
 
-        if (isBatched && treeMesh != null && treeMaterials.Count > 0)
+        var currentBatches = lodBatchArrays[currentLOD];
+        var currentCounts  = lodBatchCounts[currentLOD];
+        var currentBounds  = lodBatchBounds[currentLOD];
+
+        if (currentBatches == null || currentBatches.Length == 0) return;
+
+        if (_mainCamera == null) _mainCamera = Camera.main;
+        if (_mainCamera == null) return;
+
+        GeometryUtility.CalculateFrustumPlanes(_mainCamera, _frustumPlanes);
+
+        for (int b = 0; b < currentBatches.Length; b++)
         {
-            // Using a standard 'for' loop avoids the hidden enumerator allocation of 'foreach'
-            for (int b = 0; b < batchArrays.Length; b++)
+            // Skip entire 1023-instance batch if it's fully outside the camera frustum
+            if (!GeometryUtility.TestPlanesAABB(_frustumPlanes, currentBounds[b])) continue;
+
+            for (int i = 0; i < treeMesh.subMeshCount; i++)
             {
-                for (int i = 0; i < treeMesh.subMeshCount; i++)
-                {
-                    Material matToUse = (i < treeMaterials.Count) ? treeMaterials[i] : treeMaterials[0];
-                    Graphics.DrawMeshInstanced(
-                        treeMesh, 
-                        i, 
-                        matToUse, 
-                        batchArrays[b], // Passing the pre-built array (0 allocations)
-                        batchCounts[b], 
-                        null,
-                        ShadowCastingMode.Off, 
-                        true,
-                        gameObject.layer,
-                        null,
-                        LightProbeUsage.BlendProbes,
-                        null
-                    );
-                }
+                Material matToUse = (i < treeMaterials.Count) ? treeMaterials[i] : treeMaterials[0];
+                Graphics.DrawMeshInstanced(
+                    treeMesh,
+                    i,
+                    matToUse,
+                    currentBatches[b],
+                    currentCounts[b],
+                    null,
+                    ShadowCastingMode.Off,
+                    true,
+                    gameObject.layer,
+                    null,
+                    LightProbeUsage.Off,  // BlendProbes is expensive at forest density
+                    null
+                );
             }
         }
     }

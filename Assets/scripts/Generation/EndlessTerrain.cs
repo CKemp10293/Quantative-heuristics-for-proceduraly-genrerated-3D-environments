@@ -29,7 +29,7 @@ public class EndlessTerrain : MonoBehaviour
     int numberOfChunksVisibleInViewDistance;
 
     Dictionary<Vector2,TerrainChunk> terrianChunkDictionary = new Dictionary<Vector2,TerrainChunk>();
-    List<TerrainChunk> terrainChunksVisibleLastUpdates = new List<TerrainChunk>();
+    HashSet<TerrainChunk> terrainChunksVisibleLastUpdates = new HashSet<TerrainChunk>();
 
     void Start()
     {
@@ -62,15 +62,13 @@ public class EndlessTerrain : MonoBehaviour
     /// </summary>
     void updateVisibleChunks()
     {
-        // Update chunks that were visible last frame and hide them if they moved out of range
-        for (int i = terrainChunksVisibleLastUpdates.Count - 1; i >= 0; i--)
+        // Update chunks that were visible last frame; remove any that have moved out of range.
+        // RemoveWhere iterates once with no allocations — O(1) membership vs O(n) List.Contains.
+        terrainChunksVisibleLastUpdates.RemoveWhere(chunk =>
         {
-            terrainChunksVisibleLastUpdates[i].UpdateChunk();
-            if (!terrainChunksVisibleLastUpdates[i].isVisible())
-            {
-                terrainChunksVisibleLastUpdates.RemoveAt(i);
-            }
-        }
+            chunk.UpdateChunk();
+            return !chunk.isVisible();
+        });
 
         int currentChunkCoordX = Mathf.RoundToInt(viewerPosition.x / chunkSize);
         int currentChunkCoordY = Mathf.RoundToInt(viewerPosition.y / chunkSize);
@@ -84,14 +82,9 @@ public class EndlessTerrain : MonoBehaviour
 
                 if (terrianChunkDictionary.TryGetValue(viewedChunkCoords, out TerrainChunk existingChunk))
                 {
-                    terrianChunkDictionary[viewedChunkCoords].UpdateChunk();
-                    if (terrianChunkDictionary[viewedChunkCoords].isVisible())
-                    {
-                        if (!terrainChunksVisibleLastUpdates.Contains(terrianChunkDictionary[viewedChunkCoords]))
-                        {
-                            terrainChunksVisibleLastUpdates.Add(terrianChunkDictionary[viewedChunkCoords]);
-                        }
-                    }
+                    existingChunk.UpdateChunk();
+                    if (existingChunk.isVisible())
+                        terrainChunksVisibleLastUpdates.Add(existingChunk); // HashSet ignores duplicates
                 } else
                 {
                     // chunk doesnt exist yet,  create a new one 
@@ -128,6 +121,10 @@ public class EndlessTerrain : MonoBehaviour
         levelOfDetailInfo[] levelsOfDetail;
         LODMesh[] lODMeshes;
         int previousLODIndex = -1; 
+
+        // [lodIndex][prefabIndex] — filtered matrices per LOD, built once on map data receipt
+        private List<Matrix4x4>[][] cachedLODTreeMatrices;
+        private bool treeMatricesCached = false;
 
         // Tree and collision data
         public TerrainChunk(Vector2 coord,int size,Transform parent,Material material,levelOfDetailInfo[] levelsOfDetail)
@@ -168,7 +165,44 @@ public class EndlessTerrain : MonoBehaviour
         {
             this.mapData = mapData;
             mapDataRecieved = true;
+            PrecomputeTreeMatrices(); // Build all LOD variants once before first UpdateChunk
             UpdateChunk();
+        }
+
+        /// <summary>
+        /// Pre-filters tree matrices for every LOD level so LOD transitions are O(1).
+        /// Called once per chunk when map data first arrives.
+        /// </summary>
+        void PrecomputeTreeMatrices()
+        {
+            if (mapGenerator.availablePresets.Count <= mapData.presetIndex) return;
+            TreePreset preset = mapGenerator.availablePresets[mapData.presetIndex].treePreset;
+            if (preset == null || preset.prefabConfigs == null || mapData.treeMatrices == null) return;
+
+            int numLODs    = levelsOfDetail.Length;
+            int numPrefabs = mapData.treeMatrices.Length;
+            Matrix4x4 globalScaleMatrix = Matrix4x4.Scale(Vector3.one * scale);
+
+            cachedLODTreeMatrices = new List<Matrix4x4>[numLODs][];
+
+            for (int lod = 0; lod < numLODs; lod++)
+            {
+                cachedLODTreeMatrices[lod] = new List<Matrix4x4>[numPrefabs];
+                int skipFactor = 1 << lod;
+
+                for (int i = 0; i < numPrefabs; i++)
+                {
+                    List<Matrix4x4> raw = mapData.treeMatrices[i];
+                    var filtered = new List<Matrix4x4>(raw.Count / skipFactor + 1);
+                    for (int k = 0; k < raw.Count; k++)
+                    {
+                        if (k % skipFactor == 0)
+                            filtered.Add(globalScaleMatrix * raw[k]);
+                    }
+                    cachedLODTreeMatrices[lod][i] = filtered;
+                }
+            }
+            treeMatricesCached = true;
         }
 
         /// <summary>
@@ -225,19 +259,19 @@ public class EndlessTerrain : MonoBehaviour
         }
 
         /// <summary>
-        /// Manages the density and collision of trees based on the chunk's active LOD.
+        /// Switches the active LOD on each TreeGenerator. The first call also initialises
+        /// each generator with pre-cached matrices for all LOD levels so subsequent
+        /// transitions are a free index swap with no allocations or batch rebuilds.
         /// </summary>
         public void updateTrees(int LODindex)
         {
-            // Saftey check
+            if (!treeMatricesCached) return;
             if (mapGenerator.availablePresets.Count <= mapData.presetIndex) return;
 
             TreePreset preset = mapGenerator.availablePresets[mapData.presetIndex].treePreset;
-            if(preset == null || preset.prefabConfigs == null) return ;
+            if (preset == null || preset.prefabConfigs == null) return;
 
-            
-            // Toggle high-fidelity physics only on LOD 0
-            if(LODindex == 0)
+            if (LODindex == 0)
             {
                 treeColliderTrigger.SetActive(true);
                 if (!treeTriggerGenerated)
@@ -251,13 +285,10 @@ public class EndlessTerrain : MonoBehaviour
                 treeColliderTrigger.SetActive(false);
             }
 
-            Matrix4x4 globalScaleMatrix = Matrix4x4.Scale(Vector3.one * scale);
-            int skipTreeDrawFactor = 1 << LODindex;
+            int clampedLOD = Mathf.Clamp(LODindex, 0, cachedLODTreeMatrices.Length - 1);
 
-            //Loop through all tree types in map data
             for (int i = 0; i < mapData.treeMatrices.Length; i++)
             {
-                // Ensure we have a treeGenerator for this prefab type
                 if (treeGenerators.Count <= i)
                 {
                     GameObject genObj = new GameObject("PrefabGen_" + preset.prefabConfigs[i].name);
@@ -265,20 +296,17 @@ public class EndlessTerrain : MonoBehaviour
                     genObj.transform.localPosition = Vector3.zero;
                     treeGenerators.Add(genObj.AddComponent<TreeGenerator>());
                 }
-                
-                // Filter matrix for this sepcific type of prefab.
-                List<Matrix4x4> rawMatrices = mapData.treeMatrices[i];
-                List<Matrix4x4> filteredPrefabs = new List<Matrix4x4>();
 
-                for (int k = 0; k < rawMatrices.Count; k++)
+                TreeGenerator gen = treeGenerators[i];
+                if (!gen.IsInitialised)
                 {
-                    if(k % skipTreeDrawFactor == 0)
-                    {
-                        filteredPrefabs.Add(globalScaleMatrix * rawMatrices[k]);
-                    }
+                    // Pass all LOD variants at once — batches are built here and never rebuilt
+                    var allLODMatrices = new List<Matrix4x4>[cachedLODTreeMatrices.Length];
+                    for (int lod = 0; lod < cachedLODTreeMatrices.Length; lod++)
+                        allLODMatrices[lod] = cachedLODTreeMatrices[lod][i];
+                    gen.Initialise(allLODMatrices, preset.prefabConfigs[i].prefab);
                 }
-                // init generator for this prefab
-                treeGenerators[i].Initialise(filteredPrefabs,preset.prefabConfigs[i].prefab);
+                gen.SetLOD(clampedLOD);
             }
         }
 

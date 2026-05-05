@@ -73,12 +73,16 @@ public class MapGenerator : MonoBehaviour
     void Update()
     {
         // Process background thread callbacks on the Main Unity Thread
-        while(mapDataThreadInfoQueue.Count > 0)
+        // Process at most 2 callbacks per queue per frame to prevent frame spikes
+        // when several chunks arrive from background threads simultaneously.
+        int processed = 0;
+        while(mapDataThreadInfoQueue.Count > 0 && processed++ < 2)
         {
             MapThreadInfo<MapData> threadInfoMap = mapDataThreadInfoQueue.Dequeue();
             threadInfoMap.callback(threadInfoMap.parameter);
         }
-        while(meshDataThreadInfoQueue.Count > 0)
+        processed = 0;
+        while(meshDataThreadInfoQueue.Count > 0 && processed++ < 2)
         {
             MapThreadInfo<MeshData> threadInfoMesh = meshDataThreadInfoQueue.Dequeue();
             threadInfoMesh.callback(threadInfoMesh.parameter);
