@@ -166,7 +166,6 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 5046292240847240006}
-  - {fileID: 1439704158856036985}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -243,6 +242,7 @@ MonoBehaviour:
   symmetryText: {fileID: 2879610218277046658}
   harmonyText: {fileID: 6565493738210210152}
   penaltyText: {fileID: 8729550676590846999}
+  detailCanvasGroup: {fileID: 0}
 --- !u!1 &3110412826671653999
 GameObject:
   m_ObjectHideFlags: 0
@@ -1421,18 +1421,18 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7899878488550284970}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 3924285318896004742}
-  m_Father: {fileID: 8615859824522870630}
+  m_Father: {fileID: 3260392153667189979}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 1400, y: -995}
-  m_SizeDelta: {x: 160, y: 30}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &546901041765915279
 CanvasRenderer:
@@ -1902,6 +1902,7 @@ RectTransform:
   - {fileID: 248578282390128724}
   - {fileID: 8477852571722449257}
   - {fileID: 2741145352659500532}
+  - {fileID: 1439704158856036985}
   m_Father: {fileID: 5046292240847240006}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
